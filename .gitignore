@@ -1,0 +1,17 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Environment variables (if you add later)
+.env
+
+# Database files (local dev)
+*.db
+
+# OS / editor noise
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MockDock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-bracket">[</span>MockDock<span class="logo-bracket">]</span>
+      </div>
+      <div class="header-tagline">zero-change mock backend for frontend devs</div>
+    </div>
+  </header>
+
+  <main class="main-grid">
+
+    <!-- LEFT PANEL: BUILDER -->
+    <section class="panel panel-builder" id="builder-panel">
+
+      <!-- STEP INDICATOR -->
+      <div class="step-indicator">
+        <div class="step-pill active" id="step-pill-1">
+          <span class="step-num">01</span>
+          <span class="step-label">Define Resource</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-pill" id="step-pill-2">
+          <span class="step-num">02</span>
+          <span class="step-label">Seed Records</span>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="step-block" id="step-1">
+        <div class="panel-section">
+          <label class="field-label">Resource Name</label>
+          <input type="text" id="input-resource" class="text-input" placeholder="users" autocomplete="off" />
+        </div>
+
+        <div class="panel-section">
+          <label class="field-label">Route Path <span class="field-hint">must start with /</span></label>
+          <input type="text" id="input-route" class="text-input" placeholder="/api/users" autocomplete="off" />
+        </div>
+
+        <div class="panel-section">
+          <div class="schema-toggle-row">
+            <label class="field-label">Schema</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" id="toggle-form" onclick="switchSchemaMode('form')">Form</button>
+              <button class="toggle-btn" id="toggle-json" onclick="switchSchemaMode('json')">JSON</button>
+            </div>
+          </div>
+
+          <!-- Form field builder -->
+          <div id="schema-form-mode">
+            <div id="field-rows"></div>
+            <button class="btn-ghost" onclick="addFieldRow()">+ Add Field</button>
+          </div>
+
+          <!-- JSON paste -->
+          <div id="schema-json-mode" class="hidden">
+            <textarea id="schema-json-input" class="code-textarea" rows="6" placeholder='{"name": "string", "age": "number", "active": "boolean"}'></textarea>
+            <div class="field-hint" id="json-parse-status"></div>
+          </div>
+        </div>
+
+        <!-- AUTH TOGGLE -->
+        <div class="panel-section">
+          <div class="auth-toggle-row">
+            <label class="field-label">Auth <span class="field-hint">optional</span></label>
+            <label class="switch">
+              <input type="checkbox" id="auth-toggle" onchange="toggleAuth()" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div id="auth-config" class="hidden">
+            <div class="auth-inner">
+              <label class="field-label-sm">Login Route</label>
+              <input type="text" id="input-login-route" class="text-input" placeholder="/api/login" autocomplete="off" />
+              <label class="field-label-sm" style="margin-top:12px">Token</label>
+              <input type="text" id="input-token" class="text-input" placeholder="mock_abc123" autocomplete="off" />
+              <label class="field-label-sm" style="margin-top:12px">Protected Routes <span class="field-hint">will be populated from route path above</span></label>
+              <div id="protected-routes-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="step1-error" class="error-msg hidden"></div>
+
+        <button class="btn-primary" onclick="goToStep2()">Continue to Seed Records →</button>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step-block hidden" id="step-2">
+        <div class="step2-schema-summary" id="step2-schema-summary"></div>
+
+        <div class="panel-section">
+          <label class="field-label">Records</label>
+          <div id="record-rows"></div>
+          <button class="btn-ghost" onclick="addRecordRow()">+ Add Row</button>
+        </div>
+
+        <div id="step2-error" class="error-msg hidden"></div>
+
+        <div class="step2-actions">
+          <button class="btn-ghost" onclick="goBackToStep1()">← Back</button>
+          <button class="btn-primary" id="submit-btn" onclick="submitCreate()">Generate Mock API</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANEL: OUTPUT -->
+    <section class="panel panel-output hidden" id="output-panel">
+
+      <!-- SCRIPT TAG -->
+      <div class="output-block output-primary">
+        <div class="output-block-label">Your script tag — paste this into your HTML</div>
+        <div class="code-row">
+          <code id="output-script-tag" class="code-value"></code>
+          <button class="btn-copy" onclick="copyText('output-script-tag', this)">Copy</button>
+        </div>
+        <div class="session-note">
+          ⚠ Records added via your frontend during testing are session-only and will reset on refresh. Use the inline tester below to permanently add records to MockDock.
+        </div>
+      </div>
+
+      <!-- SCHEMA SUMMARY -->
+      <div class="output-block">
+        <div class="output-block-label">Schema</div>
+        <div id="output-schema-summary" class="schema-chips"></div>
+      </div>
+
+      <!-- EXPIRY -->
+      <div class="output-block">
+        <div class="output-block-label">Expires</div>
+        <div id="output-expiry" class="expiry-value mono"></div>
+      </div>
+
+      <!-- ENDPOINTS -->
+      <div class="output-block">
+        <div class="output-block-label">Endpoints — for curl / direct testing</div>
+        <div id="output-endpoints" class="endpoint-list"></div>
+      </div>
+
+      <!-- INLINE TESTER -->
+      <div class="output-block">
+        <div class="output-block-label">Inline API Tester</div>
+
+        <div class="tester-row">
+          <select id="tester-method-select" class="select-input" onchange="onTesterMethodChange()"></select>
+        </div>
+
+        <div id="tester-body-wrap" class="hidden">
+          <label class="field-label-sm">Request Body (JSON)</label>
+          <textarea id="tester-body" class="code-textarea" rows="5"></textarea>
+        </div>
+
+        <div id="tester-auth-wrap" class="hidden">
+          <label class="field-label-sm">Authorization Header</label>
+          <input type="text" id="tester-auth-header" class="text-input" placeholder="Bearer mock_abc123" />
+        </div>
+
+        <button class="btn-primary tester-send-btn" onclick="sendTestRequest()">Send Request</button>
+
+        <div id="tester-response" class="hidden">
+          <div class="tester-response-meta">
+            <span class="response-label">Response</span>
+            <span id="tester-status-badge" class="status-badge"></span>
+          </div>
+          <pre id="tester-response-body" class="response-body"></pre>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
