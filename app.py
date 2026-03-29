@@ -4,6 +4,10 @@ from db import init_db
 app = Flask(__name__, static_folder="static", static_url_path="")
 
 
+with app.app_context():
+    init_db()
+
+
 # CORS headers on every response
 @app.after_request
 def apply_cors(response):
@@ -12,11 +16,9 @@ def apply_cors(response):
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     return response
 
-
 @app.route("/options-handler", methods=["OPTIONS"])
 def options_handler():
     return "", 204
-
 
 # Blueprints 
 from routes.create import create_bp
@@ -27,12 +29,9 @@ app.register_blueprint(create_bp)
 app.register_blueprint(mock_bp)
 app.register_blueprint(interceptor_bp)
 
-
 @app.route("/")
 def index():
     return app.send_static_file("index.html")
 
-
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
