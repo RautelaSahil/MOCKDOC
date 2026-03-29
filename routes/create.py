@@ -116,7 +116,7 @@ def create():
             insert_auth_config(slug, login_route, token, protected_routes)
 
     # Build response
-    base_url = "http://localhost:5000"
+    base_url = request.host_url.rstrip('/')
     interceptor_tag = f'<script src="{base_url}/interceptor/{slug}.js"></script>'
 
     return jsonify({
