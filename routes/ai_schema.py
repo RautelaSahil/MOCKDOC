@@ -52,6 +52,7 @@ def call_groq(prompt: str) -> dict:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "MockDock/1.0",
         },
         method="POST",
     )
@@ -97,11 +98,12 @@ def generate_schema():
 
     except urllib.error.HTTPError as e:
         try:
-            detail = json.loads(e.read().decode())
-            msg = detail.get("error", {}).get("message", str(e))
+            raw_body = e.read().decode()
+            detail = json.loads(raw_body)
+            msg = detail.get("error", {}).get("message", raw_body)
         except Exception:
             msg = str(e)
-        return jsonify({"error": f"Groq API error: {msg}"}), 502
+        return jsonify({"error": f"Groq API error {e.code}: {msg}"}), 502
 
     except urllib.error.URLError as e:
         return jsonify({"error": f"Could not reach Groq API: {e.reason}"}), 502
