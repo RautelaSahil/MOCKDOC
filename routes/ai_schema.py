@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify, request
 ai_schema_bp = Blueprint("ai_schema", __name__)
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama3-8b-8192"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = """You are a JSON schema generator for a mock REST API tool called MockDock.
 
