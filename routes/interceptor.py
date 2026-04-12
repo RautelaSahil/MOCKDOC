@@ -1,46 +1,29 @@
 import json
 from datetime import datetime, timezone
+
 from flask import Blueprint, make_response
-from db import get_namespace, get_schema, get_records, get_auth_config
+
+from db import get_auth_config, get_namespace, get_records, get_resources_by_namespace, get_schema_json
 
 interceptor_bp = Blueprint("interceptor", __name__)
 
 
 def is_expired(expires_at: str) -> bool:
-    expiry = datetime.strptime(expires_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    normalized = expires_at.replace("Z", "+00:00")
+    expiry = datetime.fromisoformat(normalized)
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
     return datetime.now(timezone.utc) > expiry
 
 
 def build_pass_through_js():
-    """Returns a minimal interceptor JS that passes all fetch calls through untouched."""
     return """(function() {
-  // MockDock interceptor — namespace not found or expired. All fetch calls pass through.
+  // MockDock interceptor â€” namespace not found or expired. All fetch calls pass through.
 })();
 """
 
 
 def build_interceptor_js(route_map, auth_config):
-    """
-    Builds the full interceptor JS string.
-
-    route_map structure:
-    {
-      "/api/users": {
-        "base_route": "/api/users",
-        "records": [...],
-        "schema": { "name": "string", ... },
-        "auth_required": false
-      },
-      ...
-    }
-
-    auth_config structure (or null):
-    {
-      "login_route": "/api/login",
-      "token": "mock_abc123",
-      "protected_routes": ["/api/users"]
-    }
-    """
     route_map_json = json.dumps(route_map, indent=2)
     auth_config_json = json.dumps(auth_config) if auth_config else "null"
 
@@ -90,30 +73,23 @@ def build_interceptor_js(route_map, auth_config):
     var method = ((init && init.method) || 'GET').toUpperCase();
     var path = _extractPath(url);
 
-    // --- Tier 1: Exact match (GET, POST) ---
     if (_routeMap[path]) {{
-      var route = _routeMap[path];
-
-      // Auth login route (POST to login_route)
       if (_authConfig && path === _authConfig.login_route && method === 'POST') {{
         return Promise.resolve(_mockResponse({{ token: _authConfig.token }}));
       }}
 
-      // Auth check
       if (!_checkAuth(path, init)) {{
         return Promise.resolve(_mockResponse({{ error: 'unauthorized' }}, 401));
       }}
 
       if (method === 'GET') {{
-        var records = _getRecords(path);
-        return Promise.resolve(_mockResponse(records));
+        return Promise.resolve(_mockResponse(_getRecords(path)));
       }}
 
       if (method === 'POST') {{
         var body = {{}};
         try {{ body = JSON.parse((init && init.body) || '{{}}'); }} catch(e) {{}}
 
-        // Assign a temporary session id
         var sessionId = 'session_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
         body.id = sessionId;
 
@@ -124,12 +100,11 @@ def build_interceptor_js(route_map, auth_config):
       }}
     }}
 
-    // --- Tier 2: Prefix + ID match (PUT, DELETE) ---
     if (method === 'PUT' || method === 'DELETE') {{
       var matchedBase = null;
       var recordId = null;
-
       var keys = Object.keys(_routeMap);
+
       for (var i = 0; i < keys.length; i++) {{
         var base = keys[i];
         if (path.startsWith(base + '/')) {{
@@ -143,7 +118,6 @@ def build_interceptor_js(route_map, auth_config):
       }}
 
       if (matchedBase) {{
-        // Auth check
         if (!_checkAuth(matchedBase, init)) {{
           return Promise.resolve(_mockResponse({{ error: 'unauthorized' }}, 401));
         }}
@@ -161,7 +135,6 @@ def build_interceptor_js(route_map, auth_config):
       }}
     }}
 
-    // --- No match: pass through to original fetch ---
     return _originalFetch(input, init);
   }};
 
@@ -171,37 +144,26 @@ def build_interceptor_js(route_map, auth_config):
 
 @interceptor_bp.route("/interceptor/<namespace_js>")
 def serve_interceptor(namespace_js):
-    # Strip the .js extension
-    if not namespace_js.endswith(".js"):
-        slug = namespace_js
-    else:
-        slug = namespace_js[:-3]
-
+    slug = namespace_js[:-3] if namespace_js.endswith(".js") else namespace_js
     ns = get_namespace(slug)
 
-    # Expired or missing → pass-through JS
     if not ns or is_expired(ns["expires_at"]):
         js = build_pass_through_js()
         response = make_response(js, 200)
         response.headers["Content-Type"] = "application/javascript"
         return response
 
-    # Fetch schema, records, and auth
-    schema = get_schema(slug)
-    records = get_records(slug)
     auth = get_auth_config(slug)
+    resources = get_resources_by_namespace(slug)
+    route_map = {}
 
-    route_path = ns["route_path"]
-
-    route_map = {
-        route_path: {
-            "base_route": route_path,
-            "records": records,
-            "schema": schema,
+    for resource in resources:
+        route_map[resource["route_path"]] = {
+            "base_route": resource["route_path"],
+            "records": get_records(resource["id"]),
+            "schema": get_schema_json(resource["id"]),
         }
-    }
 
-    # If auth exists, register the login route as a known route
     if auth:
         route_map[auth["login_route"]] = {
             "base_route": auth["login_route"],

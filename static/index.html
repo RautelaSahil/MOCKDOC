@@ -42,6 +42,20 @@
       <!-- STEP 1 -->
       <div class="step-block" id="step-1">
         <div class="panel-section">
+          <label class="field-label">Namespace</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <input type="text" id="input-namespace" class="text-input" placeholder="team-demo" autocomplete="off" />
+            <span id="namespace-availability" class="field-hint"></span>
+            <button type="button" id="namespace-randomize" class="btn-ghost hidden">Randomize</button>
+          </div>
+        </div>
+
+        <!-- Resource form label (updates as resources are added) -->
+        <div class="panel-section" style="margin-bottom:8px;">
+          <span id="resource-form-label" class="field-label" style="color:var(--accent);">Resource 1</span>
+        </div>
+
+        <div class="panel-section">
           <label class="field-label">Resource Name</label>
           <input type="text" id="input-resource" class="text-input" placeholder="users" autocomplete="off" />
         </div>
@@ -52,23 +66,9 @@
         </div>
 
         <div class="panel-section">
-          <div class="schema-toggle-row">
-            <label class="field-label">Schema</label>
-            <div class="toggle-group">
-              <button class="toggle-btn active" id="toggle-form" onclick="switchSchemaMode('form')">Form</button>
-              <button class="toggle-btn" id="toggle-json" onclick="switchSchemaMode('json')">JSON</button>
-            </div>
-          </div>
-
-          <!-- Form field builder -->
-          <div id="schema-form-mode">
-            <div id="field-rows"></div>
-            <button class="btn-ghost" onclick="addFieldRow()">+ Add Field</button>
-          </div>
-
-          <!-- JSON paste -->
-          <div id="schema-json-mode" class="hidden">
-            <textarea id="schema-json-input" class="code-textarea" rows="6" placeholder='{"name": "string", "age": "number", "active": "boolean"}'></textarea>
+          <label class="field-label">Schema</label>
+          <div id="schema-json-mode">
+            <textarea id="schema-json-input" class="code-textarea" rows="6" placeholder='{"name":"string","age":"integer","email":{"type":"string","format":"email"},"role":{"enum":["admin","user"]}}'></textarea>
             <div class="field-hint" id="json-parse-status"></div>
           </div>
         </div>
@@ -95,6 +95,10 @@
           </div>
         </div>
 
+        <!-- Saved resource list -->
+        <div id="resource-list"></div>
+        <button type="button" id="add-resource-btn" class="btn-ghost" onclick="saveAndAddResource()">+ Add Another Resource</button>
+
         <div id="step1-error" class="error-msg hidden"></div>
 
         <button class="btn-primary" onclick="goToStep2()">Continue to Seed Records →</button>
@@ -102,13 +106,8 @@
 
       <!-- STEP 2 -->
       <div class="step-block hidden" id="step-2">
-        <div class="step2-schema-summary" id="step2-schema-summary"></div>
-
-        <div class="panel-section">
-          <label class="field-label">Records</label>
-          <div id="record-rows"></div>
-          <button class="btn-ghost" onclick="addRecordRow()">+ Add Row</button>
-        </div>
+        <!-- Per-resource sections injected here by buildStep2() -->
+        <div id="resource-sections"></div>
 
         <div id="step2-error" class="error-msg hidden"></div>
 
@@ -120,7 +119,22 @@
 
     </section>
 
-    <!-- RIGHT PANEL: OUTPUT -->
+    <!-- RIGHT PANEL: PREVIEW + OUTPUT -->
+    <section class="panel panel-preview" id="preview-panel">
+      <div class="output-block">
+        <div class="output-block-label">Live Route Preview</div>
+        <div class="preview-route-card">
+          <div class="preview-route-label">Route Path</div>
+          <code id="preview-route-path" class="code-value">{route_path}</code>
+        </div>
+      </div>
+
+      <div class="output-block">
+        <div class="output-block-label">Generated Endpoints</div>
+        <div id="preview-endpoints" class="endpoint-list"></div>
+      </div>
+    </section>
+
     <section class="panel panel-output hidden" id="output-panel">
 
       <!-- SCRIPT TAG -->
@@ -141,6 +155,14 @@
         <div id="output-schema-summary" class="schema-chips"></div>
       </div>
 
+      <div class="output-block hidden" id="output-token-block">
+        <div class="output-block-label">Access Token</div>
+        <div class="code-row">
+          <code id="output-token-value" class="code-value"></code>
+          <button class="btn-copy" onclick="copyText('output-token-value', this)">Copy</button>
+        </div>
+      </div>
+
       <!-- EXPIRY -->
       <div class="output-block">
         <div class="output-block-label">Expires</div>
@@ -151,6 +173,12 @@
       <div class="output-block">
         <div class="output-block-label">Endpoints — for curl / direct testing</div>
         <div id="output-endpoints" class="endpoint-list"></div>
+      </div>
+
+      <!-- FETCH SNIPPETS -->
+      <div class="output-block" id="output-fetch-block">
+        <div class="output-block-label">Fetch Snippet</div>
+        <div id="output-fetch-snippets"></div>
       </div>
 
       <!-- INLINE TESTER -->
@@ -180,6 +208,12 @@
           </div>
           <pre id="tester-response-body" class="response-body"></pre>
         </div>
+      </div>
+
+      <div class="output-block" id="output-logs-block">
+        <div class="output-block-label">Request Logs</div>
+        <div id="output-logs-empty" class="logs-empty">No requests logged yet.</div>
+        <div id="output-logs-table"></div>
       </div>
 
     </section>

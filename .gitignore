@@ -5,11 +5,15 @@ __pycache__/
 # Virtual environment
 venv/
 
-# Environment variables (if you add later)
+# Environment variables
 .env
 
 # Database files (local dev)
 *.db
+
+# Test scripts
+verify.py
+fix.py
 
 # OS / editor noise
 .DS_Store

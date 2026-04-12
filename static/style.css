@@ -124,6 +124,11 @@ body {
   position: static;
 }
 
+.panel-preview {
+  position: static;
+  margin-bottom: 24px;
+}
+
 /* ============================================================
    STEP INDICATOR
    ============================================================ */
@@ -456,6 +461,26 @@ input:checked + .switch-slider:before {
   color: var(--accent);
 }
 
+.btn-reset-records {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0;
+}
+
+.btn-reset-records:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .btn-copy {
   background: transparent;
   border: 1px solid var(--border);
@@ -531,6 +556,21 @@ input:checked + .switch-slider:before {
 
 .output-primary .output-block-label {
   color: var(--accent);
+}
+
+.preview-route-card {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+
+.preview-route-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
 }
 
 .code-row {
@@ -625,6 +665,44 @@ input:checked + .switch-slider:before {
   word-break: break-all;
 }
 
+.health-dot {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  line-height: 1;
+  margin-right: 6px;
+}
+
+.health-green {
+  color: var(--green);
+}
+
+.health-red {
+  color: var(--red);
+}
+
+.endpoint-resource-name {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text);
+  margin-right: 8px;
+}
+
+.endpoint-inline-status {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.preview-endpoint-note {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
 .curl-row {
   display: flex;
   align-items: flex-start;
@@ -695,6 +773,50 @@ input:checked + .switch-slider:before {
   line-height: 1.6;
 }
 
+.logs-empty {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+}
+
+.logs-table th,
+.logs-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.logs-table th {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.logs-table tr:last-child td {
+  border-bottom: none;
+}
+
+.log-status-green {
+  color: var(--green);
+}
+
+.log-status-red {
+  color: var(--red);
+}
+
 /* ---- Error messages ---- */
 .error-msg {
   background: rgba(224, 82, 82, 0.08);
@@ -732,3 +854,48 @@ input:checked + .switch-slider:before {
 .output-block:nth-child(3) { animation-delay: 0.15s; }
 .output-block:nth-child(4) { animation-delay: 0.20s; }
 .output-block:nth-child(5) { animation-delay: 0.25s; }
+
+/* ============================================================
+   MULTI-RESOURCE UI
+   ============================================================ */
+
+/* Saved-resource card in resource-list */
+.resource-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  margin-bottom: 6px;
+}
+
+.resource-card-name {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.resource-card-meta {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Heading above each resource's records textarea in Step 2 */
+.resource-section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}

@@ -1,25 +1,33 @@
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
+
 from db import (
-    get_namespace, get_schema, get_records, get_record_by_id,
-    insert_records, update_record, delete_record, get_auth_config
+    delete_record,
+    get_auth_config,
+    get_namespace,
+    get_record_by_id,
+    get_records,
+    get_resource_by_name,
+    get_resource_by_route,
+    get_schema_json,
+    insert_records,
+    reset_records,
+    update_record,
 )
 
 mock_bp = Blueprint("mock", __name__)
 
 
-# --- Helpers ---
-
 def is_expired(expires_at: str) -> bool:
-    expiry = datetime.strptime(expires_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    normalized = expires_at.replace("Z", "+00:00")
+    expiry = datetime.fromisoformat(normalized)
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
     return datetime.now(timezone.utc) > expiry
 
 
 def check_namespace(slug):
-    """
-    Returns (namespace_dict, error_response) tuple.
-    If namespace is missing or expired, error_response is set.
-    """
     ns = get_namespace(slug)
     if not ns:
         return None, (jsonify({"error": "namespace not found"}), 404)
@@ -29,9 +37,6 @@ def check_namespace(slug):
 
 
 def check_auth(slug, route_path):
-    """
-    Returns error response tuple if auth fails, or None if auth passes / not required.
-    """
     auth = get_auth_config(slug)
     if not auth:
         return None
@@ -46,74 +51,118 @@ def check_auth(slug, route_path):
     return None
 
 
+def _is_valid_email(value):
+    if not isinstance(value, str) or "@" not in value:
+        return False
+    _, _, domain = value.partition("@")
+    return "." in domain
+
+
 def validate_and_coerce(data: dict, schema: dict):
-    """
-    Validate field types against schema.
-    Returns (coerced_dict, error_string).
-    """
     coerced = {}
-    for field_name, field_type in schema.items():
+    for field_name, field_def in schema.items():
         value = data.get(field_name)
         if value is None:
-            return None, f"field '{field_name}' is missing"
+            return None, f"field '{field_name}' is required"
 
-        if field_type == "number":
-            if not isinstance(value, (int, float)) or isinstance(value, bool):
-                return None, f"field '{field_name}' expects number, got {type(value).__name__}"
-            coerced[field_name] = value
-        elif field_type == "boolean":
-            if not isinstance(value, bool):
-                return None, f"field '{field_name}' expects boolean, got {type(value).__name__}"
-            coerced[field_name] = value
-        elif field_type == "string":
-            coerced[field_name] = str(value)
+        if isinstance(field_def, str):
+            if field_def == "string":
+                coerced[field_name] = str(value)
+            elif field_def == "integer":
+                if not isinstance(value, int) or isinstance(value, bool):
+                    return None, f"field '{field_name}' expects integer"
+                coerced[field_name] = value
+            elif field_def == "number":
+                if not isinstance(value, (int, float)) or isinstance(value, bool):
+                    return None, f"field '{field_name}' expects number"
+                coerced[field_name] = value
+            elif field_def == "boolean":
+                if not isinstance(value, bool):
+                    return None, f"field '{field_name}' expects boolean"
+                coerced[field_name] = value
+            # unknown plain type: skip silently
+        elif isinstance(field_def, dict):
+            if "enum" in field_def:
+                allowed = field_def["enum"]
+                if not isinstance(value, str) or value not in allowed:
+                    return None, f"field '{field_name}' must be one of: {', '.join(allowed)}"
+                coerced[field_name] = value
+            elif "type" in field_def and "format" in field_def:
+                if not _is_valid_email(value):
+                    return None, f"field '{field_name}' expects a valid email address"
+                coerced[field_name] = value
+            # unknown dict shape: skip silently
+
+    for field_name in data.keys():
+        if field_name not in schema:
+            return None, f"field '{field_name}' is not defined in schema"
 
     return coerced, None
 
 
-# --- GET /<namespace>/<resource> ---
-
-@mock_bp.route("/<slug>/<resource>", methods=["GET"])
-def list_records(slug, resource):
-    ns, err = check_namespace(slug)
-    if err is not None:
-        return err
-    if ns is None:  # Guard clause fixes the linter red line
-        return jsonify({"error": "namespace not found"}), 404
-
-    if ns.get("resource_name") != resource:
-        return jsonify({"error": "resource not found"}), 404
-
-    auth_err = check_auth(slug, ns.get("route_path"))
-    if auth_err is not None:
-        return auth_err
-
-    records = get_records(slug)
-    return jsonify(records), 200
-
-
-# --- POST /<namespace>/<resource> ---
-
-@mock_bp.route("/<slug>/<resource>", methods=["POST"])
-def create_record(slug, resource):
+@mock_bp.route("/<slug>/<resource_name>", methods=["GET"])
+def list_records(slug, resource_name):
     ns, err = check_namespace(slug)
     if err is not None:
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
 
-    if ns.get("resource_name") != resource:
+    resource = get_resource_by_route(slug, resource_name)
+    if not resource:
         return jsonify({"error": "resource not found"}), 404
 
-    auth_err = check_auth(slug, ns.get("route_path"))
+    auth_err = check_auth(slug, resource["route_path"])
+    if auth_err is not None:
+        return auth_err
+
+    return jsonify(get_records(resource["id"])), 200
+
+
+@mock_bp.route("/<slug>/<resource_name>/<int:record_id>", methods=["GET"])
+def get_record_route(slug, resource_name, record_id):
+    ns, err = check_namespace(slug)
+    if err is not None:
+        return err
+    if ns is None:
+        return jsonify({"error": "namespace not found"}), 404
+
+    resource = get_resource_by_route(slug, resource_name)
+    if not resource:
+        return jsonify({"error": "resource not found"}), 404
+
+    auth_err = check_auth(slug, resource["route_path"])
+    if auth_err is not None:
+        return auth_err
+
+    record = get_record_by_id(resource["id"], record_id)
+    if not record:
+        return jsonify({"error": f"record with id {record_id} not found"}), 404
+
+    return jsonify(record), 200
+
+
+@mock_bp.route("/<slug>/<resource_name>", methods=["POST"])
+def create_record(slug, resource_name):
+    ns, err = check_namespace(slug)
+    if err is not None:
+        return err
+    if ns is None:
+        return jsonify({"error": "namespace not found"}), 404
+
+    resource = get_resource_by_route(slug, resource_name)
+    if not resource:
+        return jsonify({"error": "resource not found"}), 404
+
+    auth_err = check_auth(slug, resource["route_path"])
     if auth_err is not None:
         return auth_err
 
     body = request.get_json(silent=True)
-    if not isinstance(body, dict): # Proves to linter that body is a dict
+    if not isinstance(body, dict):
         return jsonify({"error": "request body must be a valid JSON object"}), 400
 
-    schema = get_schema(slug)
+    schema = get_schema_json(resource["id"])
     if not schema:
         return jsonify({"error": "schema not found"}), 404
 
@@ -123,35 +172,31 @@ def create_record(slug, resource):
     if coerced is None:
         return jsonify({"error": "validation failed"}), 400
 
-    insert_records(slug, [coerced])
-
-    # Fetch the newly inserted record
-    all_records = get_records(slug)
+    insert_records(resource["id"], [coerced])
+    all_records = get_records(resource["id"])
     if not all_records:
         return jsonify({"error": "failed to retrieve new record"}), 500
-        
-    new_record = all_records[-1]
-    return jsonify(new_record), 201
+
+    return jsonify(all_records[-1]), 201
 
 
-# --- PUT /<namespace>/<resource>/<id> ---
-
-@mock_bp.route("/<slug>/<resource>/<int:record_id>", methods=["PUT"])
-def update_record_route(slug, resource, record_id):
+@mock_bp.route("/<slug>/<resource_name>/<int:record_id>", methods=["PUT"])
+def update_record_route(slug, resource_name, record_id):
     ns, err = check_namespace(slug)
     if err is not None:
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
 
-    if ns.get("resource_name") != resource:
+    resource = get_resource_by_route(slug, resource_name)
+    if not resource:
         return jsonify({"error": "resource not found"}), 404
 
-    auth_err = check_auth(slug, ns.get("route_path"))
+    auth_err = check_auth(slug, resource["route_path"])
     if auth_err is not None:
         return auth_err
 
-    existing = get_record_by_id(slug, record_id)
+    existing = get_record_by_id(resource["id"], record_id)
     if not existing:
         return jsonify({"error": f"record with id {record_id} not found"}), 404
 
@@ -159,7 +204,7 @@ def update_record_route(slug, resource, record_id):
     if not isinstance(body, dict):
         return jsonify({"error": "request body must be a valid JSON object"}), 400
 
-    schema = get_schema(slug)
+    schema = get_schema_json(resource["id"])
     if not schema:
         return jsonify({"error": "schema not found"}), 404
 
@@ -169,32 +214,46 @@ def update_record_route(slug, resource, record_id):
     if coerced is None:
         return jsonify({"error": "validation failed"}), 400
 
-    update_record(slug, record_id, coerced)
-
-    updated = get_record_by_id(slug, record_id)
+    update_record(resource["id"], record_id, coerced)
+    updated = get_record_by_id(resource["id"], record_id)
     return jsonify(updated), 200
 
 
-# --- DELETE /<namespace>/<resource>/<id> ---
-
-@mock_bp.route("/<slug>/<resource>/<int:record_id>", methods=["DELETE"])
-def delete_record_route(slug, resource, record_id):
+@mock_bp.route("/<slug>/<resource_name>/<int:record_id>", methods=["DELETE"])
+def delete_record_route(slug, resource_name, record_id):
     ns, err = check_namespace(slug)
     if err is not None:
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
 
-    if ns.get("resource_name") != resource:
+    resource = get_resource_by_route(slug, resource_name)
+    if not resource:
         return jsonify({"error": "resource not found"}), 404
 
-    auth_err = check_auth(slug, ns.get("route_path"))
+    auth_err = check_auth(slug, resource["route_path"])
     if auth_err is not None:
         return auth_err
 
-    existing = get_record_by_id(slug, record_id)
+    existing = get_record_by_id(resource["id"], record_id)
     if not existing:
         return jsonify({"error": f"record with id {record_id} not found"}), 404
 
-    delete_record(slug, record_id)
+    delete_record(resource["id"], record_id)
     return jsonify({"deleted": True, "id": record_id}), 200
+
+
+@mock_bp.route("/<slug>/<resource_name>/records", methods=["DELETE"])
+def reset_records_route(slug, resource_name):
+    ns, err = check_namespace(slug)
+    if err is not None:
+        return err
+    if ns is None:
+        return jsonify({"error": "namespace not found"}), 404
+
+    resource = get_resource_by_name(slug, resource_name)
+    if not resource:
+        return jsonify({"error": "resource not found"}), 404
+
+    reset_records(resource["id"])
+    return jsonify({"message": "records reset"}), 200

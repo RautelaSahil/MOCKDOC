@@ -1,19 +1,22 @@
 /* ============================================================
    MOCKDOCK — script.js
-   Two-step form, schema builder, record seeder,
-   output rendering, inline API tester
+   Two-step form, JSON schema paste, JSON record paste,
+   multi-resource support, output rendering, inline API tester
    ============================================================ */
 
 // ---- State ----
 var state = {
-  schemaMode: 'form',     // 'form' | 'json'
-  fields: [],             // [{ name, type }]
   authEnabled: false,
+  namespaceDraft: '',
+  namespaceAvailable: null,
+  namespaceCheckToken: 0,
+  outputPollIntervalId: null,
   namespace: null,
   resource: null,
   route: null,
   schema: null,
-  records: [],
+  resources: [],            // completed resources [{name, route_path, schema}]
+  currentResourceIndex: null,
   auth: null,
   endpointData: null
 };
@@ -22,96 +25,197 @@ var state = {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', function () {
-  addFieldRow();
+  setupNamespaceAvailability();
+  setupRoutePreview();
+  renderRoutePreview();
+  document.getElementById('input-route').addEventListener('input', function () {
+    if (state.authEnabled) updateProtectedRoutesList();
+  });
 });
 
 // ============================================================
-// STEP 1 — SCHEMA MODE TOGGLE
+// SCHEMA VALIDATION
 // ============================================================
-function switchSchemaMode(mode) {
-  state.schemaMode = mode;
-  document.getElementById('schema-form-mode').classList.toggle('hidden', mode !== 'form');
-  document.getElementById('schema-json-mode').classList.toggle('hidden', mode !== 'json');
-  document.getElementById('toggle-form').classList.toggle('active', mode === 'form');
-  document.getElementById('toggle-json').classList.toggle('active', mode === 'json');
-}
+var VALID_PLAIN_TYPES = ['string', 'integer', 'number', 'boolean'];
 
-// ============================================================
-// STEP 1 — FIELD BUILDER
-// ============================================================
-function addFieldRow(name, type) {
-  var container = document.getElementById('field-rows');
-  var row = document.createElement('div');
-  row.className = 'field-row';
-
-  var nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.className = 'text-input';
-  nameInput.placeholder = 'field name';
-  nameInput.value = name || '';
-
-  var typeSelect = document.createElement('select');
-  typeSelect.className = 'select-input';
-  ['string', 'number', 'boolean'].forEach(function (t) {
-    var opt = document.createElement('option');
-    opt.value = t;
-    opt.textContent = t;
-    if (t === (type || 'string')) opt.selected = true;
-    typeSelect.appendChild(opt);
-  });
-
-  var removeBtn = document.createElement('button');
-  removeBtn.className = 'btn-remove';
-  removeBtn.innerHTML = '×';
-  removeBtn.onclick = function () { container.removeChild(row); };
-
-  row.appendChild(nameInput);
-  row.appendChild(typeSelect);
-  row.appendChild(removeBtn);
-  container.appendChild(row);
-}
-
-function getSchemaFromForm() {
-  var schema = {};
-  var rows = document.querySelectorAll('#field-rows .field-row');
-  var error = null;
-  rows.forEach(function (row) {
-    var name = row.querySelector('input').value.trim();
-    var type = row.querySelector('select').value;
-    if (name) schema[name] = type;
-  });
-  if (Object.keys(schema).length === 0) error = 'Add at least one schema field.';
-  return { schema: schema, error: error };
-}
-
-function getSchemaFromJSON() {
+function getSchema() {
   var raw = document.getElementById('schema-json-input').value.trim();
-  var status = document.getElementById('json-parse-status');
+  var statusEl = document.getElementById('json-parse-status');
+
   if (!raw) {
-    status.textContent = '';
-    return { schema: null, error: 'Paste a JSON schema.' };
+    statusEl.textContent = '';
+    showStep1Error('Paste a JSON schema.');
+    return null;
   }
+
+  var parsed;
   try {
-    var parsed = JSON.parse(raw);
-    var valid = ['string', 'number', 'boolean'];
-    for (var key in parsed) {
-      if (!valid.includes(parsed[key])) {
-        status.textContent = '✗ Invalid type for "' + key + '". Use string, number, or boolean.';
-        return { schema: null, error: status.textContent };
-      }
-    }
-    if (Object.keys(parsed).length === 0) {
-      status.textContent = '✗ Schema must have at least one field.';
-      return { schema: null, error: status.textContent };
-    }
-    status.textContent = '✓ Valid';
-    status.style.color = 'var(--green)';
-    return { schema: parsed, error: null };
+    parsed = JSON.parse(raw);
   } catch (e) {
-    status.textContent = '✗ Invalid JSON: ' + e.message;
-    status.style.color = 'var(--red)';
-    return { schema: null, error: status.textContent };
+    statusEl.textContent = '✗ Invalid JSON: ' + e.message;
+    statusEl.style.color = 'var(--red)';
+    showStep1Error('Schema: invalid JSON — ' + e.message);
+    return null;
   }
+
+  if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+    showStep1Error('Schema must be a JSON object.');
+    return null;
+  }
+
+  var keys = Object.keys(parsed);
+  if (keys.length === 0) {
+    showStep1Error('Schema must have at least one field.');
+    return null;
+  }
+
+  for (var i = 0; i < keys.length; i++) {
+    var fieldName = keys[i];
+    var fieldDef = parsed[fieldName];
+
+    if (typeof fieldDef === 'string') {
+      if (VALID_PLAIN_TYPES.indexOf(fieldDef) === -1) {
+        showStep1Error('field "' + fieldName + '": invalid type definition');
+        return null;
+      }
+    } else if (typeof fieldDef === 'object' && fieldDef !== null && !Array.isArray(fieldDef)) {
+      if ('enum' in fieldDef) {
+        var enumVals = fieldDef['enum'];
+        if (!Array.isArray(enumVals) || enumVals.length === 0 ||
+            !enumVals.every(function (v) { return typeof v === 'string'; })) {
+          showStep1Error('field "' + fieldName + '": invalid type definition');
+          return null;
+        }
+      } else if ('type' in fieldDef && 'format' in fieldDef) {
+        if (fieldDef['type'] !== 'string' || fieldDef['format'] !== 'email') {
+          showStep1Error('field "' + fieldName + '": invalid type definition');
+          return null;
+        }
+      } else {
+        showStep1Error('field "' + fieldName + '": invalid type definition');
+        return null;
+      }
+    } else {
+      showStep1Error('field "' + fieldName + '": invalid type definition');
+      return null;
+    }
+  }
+
+  statusEl.textContent = '✓ Valid';
+  statusEl.style.color = 'var(--green)';
+  return parsed;
+}
+
+// ============================================================
+// RECORDS VALIDATION — per resource index
+// ============================================================
+function getRecordsForIndex(index) {
+  var ta = document.getElementById('records-json-input-' + index);
+  if (!ta) return null;
+  var raw = ta.value.trim();
+
+  if (!raw) {
+    showStep2Error('Resource ' + (index + 1) + ': paste at least one record.');
+    return null;
+  }
+
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    showStep2Error('Resource ' + (index + 1) + ': invalid JSON — ' + e.message);
+    return null;
+  }
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    showStep2Error('Resource ' + (index + 1) + ': records must be a non-empty array.');
+    return null;
+  }
+
+  for (var i = 0; i < parsed.length; i++) {
+    if (typeof parsed[i] !== 'object' || Array.isArray(parsed[i]) || parsed[i] === null) {
+      showStep2Error('Resource ' + (index + 1) + ': each record must be an object.');
+      return null;
+    }
+  }
+
+  return parsed;
+}
+
+// ============================================================
+// MULTI-RESOURCE — save current form, add to list
+// ============================================================
+function saveCurrentResource() {
+  var resource = document.getElementById('input-resource').value.trim();
+  if (!resource) { showStep1Error('Resource name is required.'); return null; }
+
+  var route = document.getElementById('input-route').value.trim();
+  if (!route) { showStep1Error('Route path is required.'); return null; }
+  if (!route.startsWith('/')) { showStep1Error('Route path must start with /'); return null; }
+
+  var schema = getSchema();
+  if (!schema) return null;
+
+  return { name: resource, route_path: route, schema: schema };
+}
+
+function saveAndAddResource() {
+  var res = saveCurrentResource();
+  if (!res) return;
+
+  state.resources.push(res);
+  renderResourceList();
+
+  // Clear form for new resource
+  document.getElementById('input-resource').value = '';
+  document.getElementById('input-route').value = '';
+  document.getElementById('schema-json-input').value = '';
+  document.getElementById('json-parse-status').textContent = '';
+  document.getElementById('resource-form-label').textContent =
+    'Resource ' + (state.resources.length + 1);
+
+  renderRoutePreview();
+}
+
+function renderResourceList() {
+  var container = document.getElementById('resource-list');
+  container.innerHTML = '';
+  state.resources.forEach(function (r, i) {
+    var card = document.createElement('div');
+    card.className = 'resource-card';
+
+    var info = document.createElement('div');
+    info.style.flex = '1';
+
+    var namEl = document.createElement('span');
+    namEl.className = 'resource-card-name';
+    namEl.textContent = r.name;
+
+    var metaEl = document.createElement('span');
+    metaEl.className = 'resource-card-meta';
+    var fieldCount = Object.keys(r.schema).length;
+    metaEl.textContent = r.route_path + ' · ' + fieldCount + ' field' + (fieldCount !== 1 ? 's' : '');
+
+    info.appendChild(namEl);
+    info.appendChild(metaEl);
+
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'btn-remove';
+    removeBtn.innerHTML = '×';
+    removeBtn.title = 'Remove resource';
+    (function (idx) {
+      removeBtn.onclick = function () {
+        state.resources.splice(idx, 1);
+        renderResourceList();
+        document.getElementById('resource-form-label').textContent =
+          'Resource ' + (state.resources.length + 1);
+      };
+    }(i));
+
+    card.appendChild(info);
+    card.appendChild(removeBtn);
+    container.appendChild(card);
+  });
 }
 
 // ============================================================
@@ -149,36 +253,175 @@ function updateProtectedRoutesList() {
   container.appendChild(label);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('input-route').addEventListener('input', function () {
-    if (state.authEnabled) updateProtectedRoutesList();
+// ============================================================
+// STEP 1 - LIVE ROUTE PREVIEW
+// ============================================================
+function setupRoutePreview() {
+  ['input-namespace', 'input-resource', 'input-route'].forEach(function (id) {
+    var element = document.getElementById(id);
+    if (!element) return;
+    element.addEventListener('input', renderRoutePreview);
   });
-});
+}
+
+function renderRoutePreview() {
+  var namespaceInput = document.getElementById('input-namespace');
+  var resourceInput = document.getElementById('input-resource');
+  var routeInput = document.getElementById('input-route');
+  var routePathEl = document.getElementById('preview-route-path');
+  var endpointsEl = document.getElementById('preview-endpoints');
+
+  var namespaceValue = namespaceInput ? namespaceInput.value.trim() : '';
+  var resourceValue = resourceInput ? resourceInput.value.trim() : '';
+  var routeValue = routeInput ? routeInput.value.trim() : '';
+
+  var namespaceSlug = namespaceValue || '{namespace}';
+  var resourceSlug = resourceValue || '{resource}';
+  var routePreview = routeValue || '/api/{resource}';
+  var basePath = '/' + namespaceSlug + '/' + resourceSlug;
+
+  routePathEl.textContent = routePreview;
+
+  var endpoints = [
+    { method: 'GET',    path: basePath,          note: 'list all' },
+    { method: 'GET',    path: basePath + '/:id',  note: 'get one' },
+    { method: 'POST',   path: basePath,          note: 'create' },
+    { method: 'PUT',    path: basePath + '/:id',  note: 'update' },
+    { method: 'DELETE', path: basePath + '/:id',  note: 'delete' }
+  ];
+
+  endpointsEl.innerHTML = '';
+  endpoints.forEach(function (endpoint, index) {
+    var item = document.createElement('div');
+    item.className = 'endpoint-item';
+    if (index === endpoints.length - 1) item.classList.add('preview-endpoint-last');
+
+    var row = document.createElement('div');
+    row.className = 'endpoint-row';
+
+    var methodBadge = document.createElement('span');
+    methodBadge.className = 'endpoint-method method-' + endpoint.method.toLowerCase();
+    methodBadge.textContent = endpoint.method;
+
+    var pathSpan = document.createElement('span');
+    pathSpan.className = 'endpoint-url';
+    pathSpan.textContent = endpoint.path;
+
+    var noteSpan = document.createElement('span');
+    noteSpan.className = 'preview-endpoint-note';
+    noteSpan.textContent = endpoint.note;
+
+    row.appendChild(methodBadge);
+    row.appendChild(pathSpan);
+    row.appendChild(noteSpan);
+    item.appendChild(row);
+    endpointsEl.appendChild(item);
+  });
+}
+
+// ============================================================
+// STEP 1 - NAMESPACE AVAILABILITY
+// ============================================================
+function setupNamespaceAvailability() {
+  var namespaceInput = document.getElementById('input-namespace');
+  var randomizeBtn = document.getElementById('namespace-randomize');
+  var debouncedCheck = debounce(function () {
+    checkNamespaceAvailability(namespaceInput.value);
+  }, 400);
+
+  namespaceInput.addEventListener('input', function () {
+    state.namespaceDraft = namespaceInput.value.trim();
+    debouncedCheck();
+  });
+
+  randomizeBtn.addEventListener('click', function () {
+    var base = namespaceInput.value.trim() || 'mockdock';
+    namespaceInput.value = base + '-' + randomSuffix(4);
+    state.namespaceDraft = namespaceInput.value.trim();
+    checkNamespaceAvailability(namespaceInput.value);
+  });
+}
+
+function checkNamespaceAvailability(rawSlug) {
+  var slug = (rawSlug || '').trim();
+  var indicator = document.getElementById('namespace-availability');
+  var randomizeBtn = document.getElementById('namespace-randomize');
+
+  if (!slug) {
+    state.namespaceAvailable = null;
+    indicator.textContent = '';
+    indicator.style.color = '';
+    randomizeBtn.classList.add('hidden');
+    return;
+  }
+
+  var requestToken = ++state.namespaceCheckToken;
+  indicator.textContent = 'checking...';
+  indicator.style.color = '';
+
+  fetch('/' + encodeURIComponent(slug) + '/check')
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (res) {
+      if (requestToken !== state.namespaceCheckToken) return;
+
+      if (!res.ok) {
+        throw new Error(res.data.error || 'Unable to check namespace.');
+      }
+
+      state.namespaceAvailable = !!res.data.available;
+      if (state.namespaceAvailable) {
+        indicator.textContent = 'available';
+        indicator.style.color = 'var(--green)';
+        randomizeBtn.classList.add('hidden');
+      } else {
+        indicator.textContent = 'taken';
+        indicator.style.color = 'var(--red)';
+        randomizeBtn.classList.remove('hidden');
+      }
+    })
+    .catch(function () {
+      if (requestToken !== state.namespaceCheckToken) return;
+      state.namespaceAvailable = null;
+      indicator.textContent = '';
+      indicator.style.color = '';
+      randomizeBtn.classList.add('hidden');
+    });
+}
+
+function debounce(fn, wait) {
+  var timeoutId = null;
+  return function () {
+    var args = arguments;
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(function () {
+      fn.apply(null, args);
+    }, wait);
+  };
+}
+
+function randomSuffix(length) {
+  var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  var result = '';
+  for (var i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 // ============================================================
 // STEP 1 → STEP 2
 // ============================================================
 function goToStep2() {
-  var errorEl = document.getElementById('step1-error');
-  errorEl.classList.add('hidden');
+  document.getElementById('step1-error').classList.add('hidden');
 
-  var resource = document.getElementById('input-resource').value.trim();
-  if (!resource) return showStep1Error('Resource name is required.');
+  // Save current form as last resource
+  var lastRes = saveCurrentResource();
+  if (!lastRes) return; // error already shown by saveCurrentResource
 
-  var route = document.getElementById('input-route').value.trim();
-  if (!route) return showStep1Error('Route path is required.');
-  if (!route.startsWith('/')) return showStep1Error('Route path must start with /');
+  // Combine already-saved resources with the current one
+  var allResources = state.resources.concat([lastRes]);
 
-  var schemaResult = state.schemaMode === 'form' ? getSchemaFromForm() : getSchemaFromJSON();
-  if (schemaResult.error) return showStep1Error(schemaResult.error);
-
-  // Save to state
-  state.resource = resource;
-  state.route = route;
-  state.fields = Object.entries(schemaResult.schema).map(function (e) { return { name: e[0], type: e[1] }; });
-  state.schema = schemaResult.schema;
-
-  // Auth
+  // Store auth
   state.auth = null;
   if (state.authEnabled) {
     var loginRoute = document.getElementById('input-login-route').value.trim();
@@ -191,6 +434,9 @@ function goToStep2() {
     }
   }
 
+  // Persist the full list (including current) for step 2
+  state.resources = allResources;
+
   buildStep2();
   showStep(2);
 }
@@ -202,6 +448,20 @@ function showStep1Error(msg) {
 }
 
 function goBackToStep1() {
+  stopOutputPolling();
+  document.getElementById('preview-panel').classList.remove('hidden');
+  document.getElementById('output-panel').classList.add('hidden');
+  // Restore last resource into the form
+  if (state.resources.length > 0) {
+    var last = state.resources[state.resources.length - 1];
+    state.resources = state.resources.slice(0, -1);
+    document.getElementById('input-resource').value = last.name;
+    document.getElementById('input-route').value = last.route_path;
+    document.getElementById('schema-json-input').value = JSON.stringify(last.schema, null, 2);
+    document.getElementById('resource-form-label').textContent =
+      'Resource ' + (state.resources.length + 1);
+    renderResourceList();
+  }
   showStep(1);
 }
 
@@ -213,84 +473,80 @@ function showStep(n) {
 }
 
 // ============================================================
-// STEP 2 — RECORD SEEDER
+// STEP 2 — BUILD (one section per resource)
 // ============================================================
+function schemaFieldLabel(fieldName, fieldDef) {
+  if (typeof fieldDef === 'string') return fieldName + ' (' + fieldDef + ')';
+  if (typeof fieldDef === 'object' && fieldDef !== null) {
+    if ('enum' in fieldDef) return fieldName + ' (enum: ' + fieldDef['enum'].join(', ') + ')';
+    if ('format' in fieldDef && fieldDef['format'] === 'email') return fieldName + ' (email)';
+  }
+  return fieldName;
+}
+
+function exampleValueForField(fieldDef) {
+  if (typeof fieldDef === 'string') {
+    if (fieldDef === 'integer' || fieldDef === 'number') return 0;
+    if (fieldDef === 'boolean') return false;
+    return '';
+  }
+  if (typeof fieldDef === 'object' && fieldDef !== null) {
+    if ('enum' in fieldDef && fieldDef['enum'].length > 0) return fieldDef['enum'][0];
+    if ('format' in fieldDef && fieldDef['format'] === 'email') return 'user@example.com';
+  }
+  return '';
+}
+
 function buildStep2() {
-  // Schema summary
-  var summary = document.getElementById('step2-schema-summary');
-  summary.innerHTML = '<strong style="color:var(--accent);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em">Schema</strong><br>' +
-    state.fields.map(function (f) { return f.name + ' <span style="color:var(--accent)">(' + f.type + ')</span>'; }).join(' &nbsp;·&nbsp; ');
+  var container = document.getElementById('resource-sections');
+  container.innerHTML = '';
 
-  // Clear existing record rows
-  document.getElementById('record-rows').innerHTML = '';
+  state.resources.forEach(function (res, idx) {
+    var section = document.createElement('div');
+    section.className = 'resource-section';
+    section.style.marginBottom = '28px';
 
-  // Add one default row
-  addRecordRow();
-}
+    // Heading
+    var heading = document.createElement('div');
+    heading.className = 'resource-section-heading';
+    heading.innerHTML =
+      '<span class="resource-card-name">' + escapeHtml(res.name) + '</span>' +
+      '<span class="resource-card-meta" style="margin-left:8px;">' + escapeHtml(res.route_path) + '</span>';
+    section.appendChild(heading);
 
-function addRecordRow() {
-  var container = document.getElementById('record-rows');
-  var row = document.createElement('div');
-  row.className = 'record-row';
+    // Schema summary
+    var summary = document.createElement('div');
+    summary.className = 'step2-schema-summary';
+    summary.innerHTML =
+      '<strong style="color:var(--accent);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em">Schema</strong><br>' +
+      Object.keys(res.schema).map(function (fn) {
+        return schemaFieldLabel(fn, res.schema[fn]);
+      }).join(' &nbsp;·&nbsp; ');
+    section.appendChild(summary);
 
-  state.fields.forEach(function (field) {
-    var input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'record-field-input';
-    input.placeholder = field.name + ' (' + field.type + ')';
-    input.dataset.field = field.name;
-    input.dataset.type = field.type;
-    row.appendChild(input);
-  });
+    // Records label
+    var recLabel = document.createElement('label');
+    recLabel.className = 'field-label';
+    recLabel.textContent = 'Records (JSON array)';
+    recLabel.setAttribute('for', 'records-json-input-' + idx);
+    section.appendChild(recLabel);
 
-  var removeBtn = document.createElement('button');
-  removeBtn.className = 'btn-remove';
-  removeBtn.innerHTML = '×';
-  removeBtn.onclick = function () {
-    if (container.children.length > 1) container.removeChild(row);
-  };
-  row.appendChild(removeBtn);
-  container.appendChild(row);
-}
-
-function collectRecords() {
-  var rows = document.querySelectorAll('#record-rows .record-row');
-  var records = [];
-  var error = null;
-
-  rows.forEach(function (row, rowIdx) {
-    var inputs = row.querySelectorAll('.record-field-input');
-    var record = {};
-    inputs.forEach(function (input) {
-      var name = input.dataset.field;
-      var type = input.dataset.type;
-      var raw = input.value.trim();
-
-      if (type === 'number') {
-        var n = Number(raw);
-        if (raw === '' || isNaN(n)) {
-          error = 'Row ' + (rowIdx + 1) + ': "' + name + '" must be a number.';
-        } else {
-          record[name] = n;
-        }
-      } else if (type === 'boolean') {
-        if (raw !== 'true' && raw !== 'false') {
-          error = 'Row ' + (rowIdx + 1) + ': "' + name + '" must be true or false.';
-        } else {
-          record[name] = raw === 'true';
-        }
-      } else {
-        if (raw === '') {
-          error = 'Row ' + (rowIdx + 1) + ': "' + name + '" cannot be empty.';
-        } else {
-          record[name] = raw;
-        }
-      }
+    // Example record placeholder
+    var exampleRecord = {};
+    Object.keys(res.schema).forEach(function (fn) {
+      exampleRecord[fn] = exampleValueForField(res.schema[fn]);
     });
-    if (!error) records.push(record);
-  });
+    var placeholder = JSON.stringify([exampleRecord], null, 2);
 
-  return { records: records, error: error };
+    var ta = document.createElement('textarea');
+    ta.id = 'records-json-input-' + idx;
+    ta.className = 'code-textarea';
+    ta.rows = 10;
+    ta.placeholder = placeholder;
+    section.appendChild(ta);
+
+    container.appendChild(section);
+  });
 }
 
 // ============================================================
@@ -300,18 +556,21 @@ function submitCreate() {
   var errorEl = document.getElementById('step2-error');
   errorEl.classList.add('hidden');
 
-  var result = collectRecords();
-  if (result.error) {
-    errorEl.textContent = result.error;
-    errorEl.classList.remove('hidden');
-    return;
+  var resourcesPayload = [];
+  for (var i = 0; i < state.resources.length; i++) {
+    var recs = getRecordsForIndex(i);
+    if (recs === null) return; // error shown inside getRecordsForIndex
+    resourcesPayload.push({
+      name: state.resources[i].name,
+      route_path: state.resources[i].route_path,
+      schema: state.resources[i].schema,
+      records: recs
+    });
   }
 
   var payload = {
-    resource: state.resource,
-    route: state.route,
-    schema: state.schema,
-    records: result.records
+    slug: state.namespaceDraft,
+    resources: resourcesPayload
   };
   if (state.auth) payload.auth = state.auth;
 
@@ -345,18 +604,46 @@ function submitCreate() {
     });
 }
 
+function showStep2Error(msg) {
+  var el = document.getElementById('step2-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
 // ============================================================
 // OUTPUT RENDERING
 // ============================================================
+function schemaChipLabel(fieldName, fieldDef) {
+  if (typeof fieldDef === 'string') return { name: fieldName, type: fieldDef };
+  if (typeof fieldDef === 'object' && fieldDef !== null) {
+    if ('enum' in fieldDef) return { name: fieldName, type: 'enum(' + fieldDef['enum'].join(',') + ')' };
+    if ('format' in fieldDef && fieldDef['format'] === 'email') return { name: fieldName, type: 'email' };
+  }
+  return { name: fieldName, type: '?' };
+}
+
 function renderOutput(data) {
   // Script tag
   document.getElementById('output-script-tag').textContent = data.interceptor_tag;
 
-  // Schema summary
+  // Schema summary — use first resource's schema from state
   var schemaEl = document.getElementById('output-schema-summary');
-  schemaEl.innerHTML = Object.entries(state.schema).map(function (e) {
-    return '<span class="schema-chip">' + e[0] + '<span class="chip-type">' + e[1] + '</span></span>';
+  var schemaToRender = state.resources.length > 0 ? state.resources[0].schema : {};
+  schemaEl.innerHTML = Object.keys(schemaToRender).map(function (fieldName) {
+    var chip = schemaChipLabel(fieldName, schemaToRender[fieldName]);
+    return '<span class="schema-chip">' + escapeHtml(chip.name) +
+           '<span class="chip-type">' + escapeHtml(chip.type) + '</span></span>';
   }).join('');
+
+  var tokenBlock = document.getElementById('output-token-block');
+  var tokenValue = document.getElementById('output-token-value');
+  if (state.endpointData && state.endpointData.token) {
+    tokenValue.textContent = state.endpointData.token;
+    tokenBlock.classList.remove('hidden');
+  } else {
+    tokenValue.textContent = '';
+    tokenBlock.classList.add('hidden');
+  }
 
   // Expiry
   document.getElementById('output-expiry').textContent = data.expires_at.replace('T', ' ').replace('Z', ' UTC');
@@ -365,15 +652,23 @@ function renderOutput(data) {
   var endpointsEl = document.getElementById('output-endpoints');
   endpointsEl.innerHTML = '';
 
+  var primaryResource = data.resources && data.resources[0];
+  if (!primaryResource) return;
+
+  var baseUrl = window.location.origin;
   var endpoints = [
-    { label: 'GET',    key: 'list',   url: data.endpoints.list.replace('GET    ', ''),   method: 'GET' },
-    { label: 'POST',   key: 'create', url: data.endpoints.create.replace('POST   ', ''), method: 'POST' },
-    { label: 'PUT',    key: 'update', url: data.endpoints.update.replace('PUT    ', ''), method: 'PUT' },
-    { label: 'DELETE', key: 'delete', url: data.endpoints.delete.replace('DELETE ', ''), method: 'DELETE' }
+    { label: 'GET',    key: 'list',   url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'GET' },
+    { label: 'POST',   key: 'create', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'POST' },
+    { label: 'PUT',    key: 'update', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'PUT' },
+    { label: 'DELETE', key: 'delete', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'DELETE' }
   ];
 
-  // Build example body from first record
-  var firstRecord = state.endpointData && collectRecords().records[0];
+  // Build example body from first resource schema
+  var firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
+  var firstRecord = {};
+  Object.keys(firstSchema).forEach(function (fn) {
+    firstRecord[fn] = exampleValueForField(firstSchema[fn]);
+  });
 
   endpoints.forEach(function (ep) {
     var item = document.createElement('div');
@@ -426,17 +721,275 @@ function renderOutput(data) {
   // Build inline tester options
   buildTester(endpoints, data);
 
+  // Build fetch snippets
+  renderFetchSnippets(data, endpoints);
+
   // Show output panel
+  document.getElementById('preview-panel').classList.add('hidden');
   var outputPanel = document.getElementById('output-panel');
   outputPanel.classList.remove('hidden');
+  refreshOutputStatus();
+  startOutputPolling();
   outputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function startOutputPolling() {
+  stopOutputPolling();
+  state.outputPollIntervalId = setInterval(function () {
+    refreshOutputStatus();
+  }, 10000);
+}
+
+function stopOutputPolling() {
+  if (state.outputPollIntervalId) {
+    clearInterval(state.outputPollIntervalId);
+    state.outputPollIntervalId = null;
+  }
+}
+
+function refreshOutputStatus() {
+  if (!state.namespace) return;
+  fetchNamespaceHealth();
+  fetchNamespaceLogs();
+}
+
+function fetchNamespaceHealth() {
+  var baseUrl = window.location.origin;
+  fetch(baseUrl + '/' + state.namespace + '/health')
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (res) {
+      if (!res.ok || !Array.isArray(res.data)) return;
+      renderHealthData(res.data);
+    })
+    .catch(function () {});
+}
+
+function fetchNamespaceLogs() {
+  var baseUrl = window.location.origin;
+  fetch(baseUrl + '/' + state.namespace + '/logs')
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (res) {
+      if (!res.ok || !Array.isArray(res.data)) return;
+      renderLogsTable(res.data);
+    })
+    .catch(function () {});
+}
+
+function renderHealthData(healthItems) {
+  var endpointsEl = document.getElementById('output-endpoints');
+  var endpointItems = endpointsEl.querySelectorAll('.endpoint-item');
+  var healthByName = {};
+  healthItems.forEach(function (item) {
+    healthByName[item.name] = item;
+  });
+
+  endpointItems.forEach(function (item) {
+    var urlSpan = item.querySelector('.endpoint-url');
+    if (!urlSpan) return;
+
+    var urlText = urlSpan.textContent;
+    var parts = urlText.split('/');
+    var resourceName = parts[parts.length - 1] === '<id>' ? parts[parts.length - 2] : parts[parts.length - 1];
+    var health = healthByName[resourceName];
+
+    var existingName = item.querySelector('.endpoint-resource-name');
+    if (existingName) existingName.remove();
+    var existingDot = item.querySelector('.health-dot');
+    if (existingDot) existingDot.remove();
+    var existingButton = item.querySelector('.btn-reset-records');
+    if (existingButton) existingButton.remove();
+    var existingStatus = item.querySelector('.endpoint-inline-status');
+    if (existingStatus) existingStatus.remove();
+
+    if (!health) return;
+
+    var row = item.querySelector('.endpoint-row');
+    var methodBadge = row.querySelector('.endpoint-method');
+
+    var dot = document.createElement('span');
+    dot.className = 'health-dot health-' + health.health;
+    dot.textContent = '●';
+
+    var name = document.createElement('span');
+    name.className = 'endpoint-resource-name';
+    name.textContent = health.name;
+
+    var resetButton = document.createElement('button');
+    resetButton.className = 'btn-reset-records';
+    resetButton.textContent = 'Reset Records';
+    resetButton.onclick = function () {
+      resetResourceRecords(health.name, resetButton);
+    };
+
+    var statusText = document.createElement('span');
+    statusText.className = 'endpoint-inline-status';
+    statusText.textContent = health.last_status_code === null ? '' : 'Last status: ' + health.last_status_code;
+
+    row.insertBefore(dot, methodBadge.nextSibling);
+    row.insertBefore(name, dot.nextSibling);
+    row.appendChild(resetButton);
+    row.appendChild(statusText);
+  });
+}
+
+function resetResourceRecords(resourceName, button) {
+  var baseUrl = window.location.origin;
+  var originalText = button.textContent;
+  button.disabled = true;
+  fetch(baseUrl + '/' + state.namespace + '/' + resourceName + '/records', {
+    method: 'DELETE'
+  })
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (res) {
+      button.disabled = false;
+      button.textContent = res.ok ? 'Records reset.' : originalText;
+      if (res.ok) {
+        setTimeout(function () {
+          button.textContent = originalText;
+        }, 2000);
+        refreshOutputStatus();
+      }
+    })
+    .catch(function () {
+      button.disabled = false;
+      button.textContent = originalText;
+    });
+}
+
+function renderLogsTable(logs) {
+  var tableWrap = document.getElementById('output-logs-table');
+  var emptyEl = document.getElementById('output-logs-empty');
+
+  if (!logs.length) {
+    tableWrap.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+    emptyEl.textContent = 'No requests logged yet.';
+    return;
+  }
+
+  emptyEl.classList.add('hidden');
+
+  var header = '<table class="logs-table"><thead><tr><th>Method</th><th>Route</th><th>Status</th><th>Response Time</th><th>Time Ago</th></tr></thead><tbody>';
+  var rows = logs.map(function (log) {
+    var statusClass = log.status_code < 400 ? 'log-status-green' : 'log-status-red';
+    return '<tr>' +
+      '<td>' + escapeHtml(log.method) + '</td>' +
+      '<td>' + escapeHtml(log.route) + '</td>' +
+      '<td class="' + statusClass + '">' + escapeHtml(String(log.status_code)) + '</td>' +
+      '<td>' + escapeHtml(String(log.response_time_ms)) + 'ms</td>' +
+      '<td>' + escapeHtml(timeAgo(log.created_at)) + '</td>' +
+      '</tr>';
+  }).join('');
+  tableWrap.innerHTML = header + rows + '</tbody></table>';
+}
+
+function timeAgo(createdAt) {
+  var created = new Date(createdAt);
+  if (isNaN(created.getTime())) return 'just now';
+  var seconds = Math.max(0, Math.floor((Date.now() - created.getTime()) / 1000));
+  if (seconds < 60) return seconds + 's ago';
+  var minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + 'm ago';
+  var hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + 'h ago';
+  var days = Math.floor(hours / 24);
+  return days + 'd ago';
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================
+// FETCH SNIPPET
+// ============================================================
+function buildFetchSnippet(method, url, auth, schema) {
+  var token = auth ? auth.token : null;
+
+  if (method === 'GET') {
+    var snippet = 'const res = await fetch("' + url + '"';
+    if (token) {
+      snippet += ', {\n  headers: { "Authorization": "Bearer ' + token + '" }\n}';
+    }
+    snippet += ');\nconst data = await res.json();';
+    return snippet;
+  }
+
+  if (method === 'POST' || method === 'PUT') {
+    var exampleBody = {};
+    if (schema) {
+      Object.keys(schema).forEach(function (fn) {
+        exampleBody[fn] = exampleValueForField(schema[fn]);
+      });
+    }
+    var bodyStr = JSON.stringify(exampleBody, null, 2)
+      .split('\n')
+      .map(function (line, i) { return i === 0 ? line : '  ' + line; })
+      .join('\n');
+
+    var headersBlock = '    "Content-Type": "application/json"';
+    if (token) {
+      headersBlock += ',\n    "Authorization": "Bearer ' + token + '"';
+    }
+
+    return 'const res = await fetch("' + url + '", {\n' +
+      '  method: "' + method + '",\n' +
+      '  headers: {\n' + headersBlock + '\n  },\n' +
+      '  body: JSON.stringify(' + bodyStr + ')\n' +
+      '});\nconst data = await res.json();';
+  }
+
+  if (method === 'DELETE') {
+    var delSnippet = 'const res = await fetch("' + url + '", {\n  method: "DELETE"';
+    if (token) {
+      delSnippet += ',\n  headers: { "Authorization": "Bearer ' + token + '" }';
+    }
+    delSnippet += '\n});\nconst data = await res.json();';
+    return delSnippet;
+  }
+
+  return '';
+}
+
+function renderFetchSnippets(data, endpoints) {
+  var container = document.getElementById('output-fetch-snippets');
+  container.innerHTML = '';
+
+  var firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
+
+  endpoints.forEach(function (ep) {
+    var snippet = buildFetchSnippet(ep.method, ep.url, state.auth, firstSchema);
+
+    var row = document.createElement('div');
+    row.className = 'curl-row';
+
+    var codeEl = document.createElement('code');
+    codeEl.className = 'curl-code';
+    codeEl.textContent = snippet;
+
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy';
+    copyBtn.textContent = 'Copy';
+    (function (text, btn) {
+      copyBtn.onclick = function () { copyTextContent(text, btn); };
+    }(snippet, copyBtn));
+
+    row.appendChild(codeEl);
+    row.appendChild(copyBtn);
+    container.appendChild(row);
+  });
 }
 
 function buildCurl(method, url, firstRecord, auth) {
   var parts = ['curl -X ' + method];
   if (auth) parts.push('-H "Authorization: Bearer ' + auth.token + '"');
   parts.push('-H "Content-Type: application/json"');
-  if ((method === 'POST' || method === 'PUT') && firstRecord) {
+  if ((method === 'POST' || method === 'PUT') && firstRecord && Object.keys(firstRecord).length > 0) {
     parts.push("--data '" + JSON.stringify(firstRecord) + "'");
   }
   parts.push('"' + url + '"');
@@ -459,10 +1012,14 @@ function buildTester(endpoints, data) {
 
   onTesterMethodChange();
 
-  // Pre-fill body with first record fields
+  // Build example body from first resource schema
   var bodyInput = document.getElementById('tester-body');
-  var rec = collectRecords().records[0];
-  bodyInput.value = rec ? JSON.stringify(rec, null, 2) : '{}';
+  var firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
+  var exampleBody = {};
+  Object.keys(firstSchema).forEach(function (fn) {
+    exampleBody[fn] = exampleValueForField(firstSchema[fn]);
+  });
+  bodyInput.value = JSON.stringify(exampleBody, null, 2);
 
   // Show auth input if auth configured
   if (state.auth) {

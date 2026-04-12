@@ -1,5 +1,6 @@
 from flask import Flask
 from db import init_db
+from middleware.request_logger import register_request_logger
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
@@ -24,10 +25,15 @@ def options_handler():
 from routes.create import create_bp
 from routes.mock import mock_bp
 from routes.interceptor import interceptor_bp
+from routes.namespace import namespace_bp
+from routes.logs import logs_bp
 
 app.register_blueprint(create_bp)
 app.register_blueprint(mock_bp)
 app.register_blueprint(interceptor_bp)
+app.register_blueprint(namespace_bp)
+app.register_blueprint(logs_bp)
+register_request_logger(app)
 
 @app.route("/")
 def index():
