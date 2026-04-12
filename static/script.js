@@ -1189,3 +1189,45 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+
+// ============================================================
+// AI RECORDS GENERATION (Groq)
+// ============================================================
+async function generateRecordsWithAI(idx, resource) {
+  var btn = document.getElementById('ai-records-btn-' + idx);
+  var statusEl = document.getElementById('ai-records-status-' + idx);
+  var ta = document.getElementById('records-json-input-' + idx);
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  statusEl.textContent = 'Asking Groq AI...';
+  statusEl.style.color = 'var(--text-muted)';
+
+  try {
+    var res = await fetch('/api/generate-records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resource_name: resource.name,
+        schema: resource.schema
+      })
+    });
+    var data = await res.json();
+
+    if (!res.ok) {
+      statusEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+      statusEl.style.color = 'var(--red)';
+      return;
+    }
+
+    ta.value = JSON.stringify(data.records, null, 2);
+    statusEl.textContent = 'Records generated! Review and adjust if needed.';
+    statusEl.style.color = 'var(--green)';
+  } catch (err) {
+    statusEl.textContent = 'Network error: ' + err.message;
+    statusEl.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '\u2728 Generate with AI';
+  }
+}
