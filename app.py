@@ -27,7 +27,9 @@ from routes.mock import mock_bp
 from routes.interceptor import interceptor_bp
 from routes.namespace import namespace_bp
 from routes.logs import logs_bp
+from routes.ai_schema import ai_schema_bp
 
+app.register_blueprint(ai_schema_bp)
 app.register_blueprint(create_bp)
 app.register_blueprint(mock_bp)
 app.register_blueprint(interceptor_bp)
