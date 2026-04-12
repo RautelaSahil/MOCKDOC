@@ -38,8 +38,12 @@ app.register_blueprint(logs_bp)
 register_request_logger(app)
 
 @app.route("/")
-def index():
-    return app.send_static_file("index.html")
+def landing():
+    return app.send_static_file("landing.html")
+
+@app.route("/app")
+def app_page():
+    return app.send_static_file("app.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
