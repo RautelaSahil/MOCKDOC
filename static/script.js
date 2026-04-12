@@ -524,12 +524,34 @@ function buildStep2() {
       }).join(' &nbsp;??&nbsp; ');
     section.appendChild(summary);
 
-    // Records label
+    // Records label row with AI button
+    var recLabelRow = document.createElement('div');
+    recLabelRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;flex-wrap:wrap;gap:8px;';
+
     var recLabel = document.createElement('label');
     recLabel.className = 'field-label';
+    recLabel.style.marginBottom = '0';
     recLabel.textContent = 'Records (JSON array)';
     recLabel.setAttribute('for', 'records-json-input-' + idx);
-    section.appendChild(recLabel);
+    recLabelRow.appendChild(recLabel);
+
+    var aiRecBtn = document.createElement('button');
+    aiRecBtn.type = 'button';
+    aiRecBtn.className = 'btn-ghost btn-ai';
+    aiRecBtn.id = 'ai-records-btn-' + idx;
+    aiRecBtn.style.cssText = 'margin-top:0;font-size:.7rem;padding:5px 12px;';
+    aiRecBtn.textContent = '\u2728 Generate with AI';
+    (function(i, resource) {
+      aiRecBtn.onclick = function() { generateRecordsWithAI(i, resource); };
+    })(idx, res);
+    recLabelRow.appendChild(aiRecBtn);
+    section.appendChild(recLabelRow);
+
+    var aiRecStatus = document.createElement('div');
+    aiRecStatus.className = 'field-hint';
+    aiRecStatus.id = 'ai-records-status-' + idx;
+    aiRecStatus.style.marginBottom = '7px';
+    section.appendChild(aiRecStatus);
 
     // Example record placeholder
     var exampleRecord = {};
