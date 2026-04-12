@@ -1,5 +1,5 @@
 /* ============================================================
-   MOCKDOCK — script.js
+   MOCKDOCK ??? script.js
    Two-step form, JSON schema paste, JSON record paste,
    multi-resource support, output rendering, inline API tester
    ============================================================ */
@@ -52,9 +52,9 @@ function getSchema() {
   try {
     parsed = JSON.parse(raw);
   } catch (e) {
-    statusEl.textContent = '✗ Invalid JSON: ' + e.message;
+    statusEl.textContent = '??? Invalid JSON: ' + e.message;
     statusEl.style.color = 'var(--red)';
-    showStep1Error('Schema: invalid JSON — ' + e.message);
+    showStep1Error('Schema: invalid JSON ??? ' + e.message);
     return null;
   }
 
@@ -101,13 +101,13 @@ function getSchema() {
     }
   }
 
-  statusEl.textContent = '✓ Valid';
+  statusEl.textContent = '??? Valid';
   statusEl.style.color = 'var(--green)';
   return parsed;
 }
 
 // ============================================================
-// RECORDS VALIDATION — per resource index
+// RECORDS VALIDATION ??? per resource index
 // ============================================================
 function getRecordsForIndex(index) {
   var ta = document.getElementById('records-json-input-' + index);
@@ -123,7 +123,7 @@ function getRecordsForIndex(index) {
   try {
     parsed = JSON.parse(raw);
   } catch (e) {
-    showStep2Error('Resource ' + (index + 1) + ': invalid JSON — ' + e.message);
+    showStep2Error('Resource ' + (index + 1) + ': invalid JSON ??? ' + e.message);
     return null;
   }
 
@@ -143,7 +143,7 @@ function getRecordsForIndex(index) {
 }
 
 // ============================================================
-// MULTI-RESOURCE — save current form, add to list
+// MULTI-RESOURCE ??? save current form, add to list
 // ============================================================
 function saveCurrentResource() {
   var resource = document.getElementById('input-resource').value.trim();
@@ -194,14 +194,14 @@ function renderResourceList() {
     var metaEl = document.createElement('span');
     metaEl.className = 'resource-card-meta';
     var fieldCount = Object.keys(r.schema).length;
-    metaEl.textContent = r.route_path + ' · ' + fieldCount + ' field' + (fieldCount !== 1 ? 's' : '');
+    metaEl.textContent = r.route_path + ' ?? ' + fieldCount + ' field' + (fieldCount !== 1 ? 's' : '');
 
     info.appendChild(namEl);
     info.appendChild(metaEl);
 
     var removeBtn = document.createElement('button');
     removeBtn.className = 'btn-remove';
-    removeBtn.innerHTML = '×';
+    removeBtn.innerHTML = '??';
     removeBtn.title = 'Remove resource';
     (function (idx) {
       removeBtn.onclick = function () {
@@ -219,7 +219,7 @@ function renderResourceList() {
 }
 
 // ============================================================
-// STEP 1 — AUTH TOGGLE
+// STEP 1 ??? AUTH TOGGLE
 // ============================================================
 function toggleAuth() {
   state.authEnabled = document.getElementById('auth-toggle').checked;
@@ -409,7 +409,7 @@ function randomSuffix(length) {
 }
 
 // ============================================================
-// STEP 1 → STEP 2
+// STEP 1 ??? STEP 2
 // ============================================================
 function goToStep2() {
   document.getElementById('step1-error').classList.add('hidden');
@@ -473,7 +473,7 @@ function showStep(n) {
 }
 
 // ============================================================
-// STEP 2 — BUILD (one section per resource)
+// STEP 2 ??? BUILD (one section per resource)
 // ============================================================
 function schemaFieldLabel(fieldName, fieldDef) {
   if (typeof fieldDef === 'string') return fieldName + ' (' + fieldDef + ')';
@@ -521,7 +521,7 @@ function buildStep2() {
       '<strong style="color:var(--accent);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em">Schema</strong><br>' +
       Object.keys(res.schema).map(function (fn) {
         return schemaFieldLabel(fn, res.schema[fn]);
-      }).join(' &nbsp;·&nbsp; ');
+      }).join(' &nbsp;??&nbsp; ');
     section.appendChild(summary);
 
     // Records label
@@ -576,7 +576,7 @@ function submitCreate() {
 
   var btn = document.getElementById('submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Generating…';
+  btn.textContent = 'Generating???';
 
   fetch('/api/create', {
     method: 'POST',
@@ -626,7 +626,7 @@ function renderOutput(data) {
   // Script tag
   document.getElementById('output-script-tag').textContent = data.interceptor_tag;
 
-  // Schema summary — use first resource's schema from state
+  // Schema summary ??? use first resource's schema from state
   var schemaEl = document.getElementById('output-schema-summary');
   var schemaToRender = state.resources.length > 0 ? state.resources[0].schema : {};
   schemaEl.innerHTML = Object.keys(schemaToRender).map(function (fieldName) {
@@ -808,7 +808,7 @@ function renderHealthData(healthItems) {
 
     var dot = document.createElement('span');
     dot.className = 'health-dot health-' + health.health;
-    dot.textContent = '●';
+    dot.textContent = '???';
 
     var name = document.createElement('span');
     name.className = 'endpoint-resource-name';
@@ -1125,3 +1125,67 @@ function copyTextContent(text, btn) {
     }, 1800);
   });
 }
+
+// ============================================================
+// AI SCHEMA GENERATION (Groq)
+// ============================================================
+async function generateSchemaWithAI() {
+  var prompt = document.getElementById('ai-schema-prompt').value.trim();
+  var statusEl = document.getElementById('ai-schema-status');
+  var btn = document.getElementById('ai-generate-btn');
+
+  if (!prompt) {
+    statusEl.textContent = 'Please describe your resource first.';
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  statusEl.textContent = 'Asking Groq AI...';
+  statusEl.style.color = 'var(--text-muted)';
+
+  try {
+    var res = await fetch('/api/generate-schema', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt })
+    });
+    var data = await res.json();
+
+    if (!res.ok) {
+      statusEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+      statusEl.style.color = 'var(--red)';
+      return;
+    }
+
+    document.getElementById('schema-json-input').value = JSON.stringify(data.schema, null, 2);
+    statusEl.textContent = 'Schema generated! Review and adjust if needed.';
+    statusEl.style.color = 'var(--green)';
+
+    // Trigger parse status update
+    var parseStatusEl = document.getElementById('json-parse-status');
+    try {
+      JSON.parse(document.getElementById('schema-json-input').value);
+      parseStatusEl.textContent = '';
+    } catch (e) {
+      parseStatusEl.textContent = 'Invalid JSON';
+    }
+  } catch (err) {
+    statusEl.textContent = 'Network error: ' + err.message;
+    statusEl.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '\u2728 Generate with AI';
+  }
+}
+
+// Allow pressing Enter in the AI prompt field to trigger generation
+document.addEventListener('DOMContentLoaded', function () {
+  var promptInput = document.getElementById('ai-schema-prompt');
+  if (promptInput) {
+    promptInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') generateSchemaWithAI();
+    });
+  }
+});

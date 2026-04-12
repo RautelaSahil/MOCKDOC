@@ -68,6 +68,11 @@
         <div class="panel-section">
           <label class="field-label">Schema</label>
           <div id="schema-json-mode">
+            <div class="ai-schema-row">
+              <input type="text" id="ai-schema-prompt" class="text-input" placeholder="Describe your resource, e.g. a user with name, age and email" autocomplete="off" />
+              <button type="button" id="ai-generate-btn" class="btn-ghost btn-ai" onclick="generateSchemaWithAI()">&#10024; Generate with AI</button>
+            </div>
+            <div class="field-hint" id="ai-schema-status"></div>
             <textarea id="schema-json-input" class="code-textarea" rows="6" placeholder='{"name":"string","age":"integer","email":{"type":"string","format":"email"},"role":{"enum":["admin","user"]}}'></textarea>
             <div class="field-hint" id="json-parse-status"></div>
           </div>
@@ -101,7 +106,7 @@
 
         <div id="step1-error" class="error-msg hidden"></div>
 
-        <button class="btn-primary" onclick="goToStep2()">Continue to Seed Records →</button>
+        <button class="btn-primary" onclick="goToStep2()">Continue to Seed Records ???</button>
       </div>
 
       <!-- STEP 2 -->
@@ -112,7 +117,7 @@
         <div id="step2-error" class="error-msg hidden"></div>
 
         <div class="step2-actions">
-          <button class="btn-ghost" onclick="goBackToStep1()">← Back</button>
+          <button class="btn-ghost" onclick="goBackToStep1()">??? Back</button>
           <button class="btn-primary" id="submit-btn" onclick="submitCreate()">Generate Mock API</button>
         </div>
       </div>
@@ -139,13 +144,13 @@
 
       <!-- SCRIPT TAG -->
       <div class="output-block output-primary">
-        <div class="output-block-label">Your script tag — paste this into your HTML</div>
+        <div class="output-block-label">Your script tag ??? paste this into your HTML</div>
         <div class="code-row">
           <code id="output-script-tag" class="code-value"></code>
           <button class="btn-copy" onclick="copyText('output-script-tag', this)">Copy</button>
         </div>
         <div class="session-note">
-          ⚠ Records added via your frontend during testing are session-only and will reset on refresh. Use the inline tester below to permanently add records to MockDock.
+          ??? Records added via your frontend during testing are session-only and will reset on refresh. Use the inline tester below to permanently add records to MockDock.
         </div>
       </div>
 
@@ -171,7 +176,7 @@
 
       <!-- ENDPOINTS -->
       <div class="output-block">
-        <div class="output-block-label">Endpoints — for curl / direct testing</div>
+        <div class="output-block-label">Endpoints ??? for curl / direct testing</div>
         <div id="output-endpoints" class="endpoint-list"></div>
       </div>
 
