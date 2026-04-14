@@ -12,6 +12,7 @@ var state = {
   namespaceCheckToken: 0,
   outputPollIntervalId: null,
   namespace: null,
+  namespaceToken: null,
   resource: null,
   route: null,
   schema: null,
@@ -31,6 +32,11 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('input-route').addEventListener('input', function () {
     if (state.authEnabled) updateProtectedRoutesList();
   });
+
+  document.getElementById('step-1').addEventListener('input', persistDraft);
+  document.getElementById('step-2').addEventListener('input', persistDraft);
+
+  checkPersistenceOnLoad();
 });
 
 // ============================================================
@@ -439,6 +445,7 @@ function goToStep2() {
 
   buildStep2();
   showStep(2);
+  persistDraft();
 }
 
 function showStep1Error(msg) {
@@ -463,6 +470,7 @@ function goBackToStep1() {
     renderResourceList();
   }
   showStep(1);
+  persistDraft();
 }
 
 function showStep(n) {
@@ -615,6 +623,18 @@ function submitCreate() {
         return;
       }
       state.namespace = res.data.namespace;
+      state.namespaceToken = res.data.token || null;
+      var newRecent = { slug: state.namespace, token: state.namespaceToken, created_at: new Date().toISOString() };
+      var recent = [];
+      try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]'); } catch(e){}
+      recent = recent.filter(function(r) { return r.slug !== state.namespace; });
+      recent.unshift(newRecent);
+      if (recent.length > 5) recent = recent.slice(0, 5);
+      localStorage.setItem('mockdock_recent_v1', JSON.stringify(recent));
+      localStorage.removeItem('mockdock_draft_v1');
+      if (state.namespace && state.namespaceToken) {
+        localStorage.setItem('mockdock_ns_' + state.namespace, JSON.stringify(newRecent));
+      }
       state.endpointData = res.data;
       renderOutput(res.data);
     })
@@ -657,14 +677,38 @@ function renderOutput(data) {
            '<span class="chip-type">' + escapeHtml(chip.type) + '</span></span>';
   }).join('');
 
-  var tokenBlock = document.getElementById('output-token-block');
+  var shareBlock = document.getElementById('output-share-block');
+  var ownerMode = document.getElementById('output-mode-owner');
+  var viewerMode = document.getElementById('output-mode-viewer');
+  var modeBadge = document.getElementById('output-mode-badge');
   var tokenValue = document.getElementById('output-token-value');
-  if (state.endpointData && state.endpointData.token) {
-    tokenValue.textContent = state.endpointData.token;
-    tokenBlock.classList.remove('hidden');
+  var shareUrl = document.getElementById('output-share-url');
+  
+  if (state.endpointData) {
+    shareUrl.textContent = window.location.origin + '/api/namespace/' + state.endpointData.namespace;
+    
+    if (state.namespaceToken) {
+      modeBadge.textContent = 'Owner Mode (Full Access)';
+      modeBadge.style.color = 'var(--acc2)';
+      modeBadge.style.background = 'rgba(16,185,129,0.15)';
+      modeBadge.style.border = '1px solid rgba(16,185,129,0.3)';
+      
+      tokenValue.textContent = state.namespaceToken;
+      ownerMode.classList.remove('hidden');
+      viewerMode.classList.add('hidden');
+    } else {
+      modeBadge.textContent = 'Viewer Mode (Read Only)';
+      modeBadge.style.color = 'var(--text)';
+      modeBadge.style.background = 'rgba(255,255,255,0.1)';
+      modeBadge.style.border = '1px solid rgba(255,255,255,0.2)';
+      
+      ownerMode.classList.add('hidden');
+      viewerMode.classList.remove('hidden');
+    }
+    document.getElementById('viewer-token-input').value = '';
+    shareBlock.classList.remove('hidden');
   } else {
-    tokenValue.textContent = '';
-    tokenBlock.classList.add('hidden');
+    shareBlock.classList.add('hidden');
   }
 
   // Expiry
@@ -855,11 +899,17 @@ function renderHealthData(healthItems) {
 }
 
 function resetResourceRecords(resourceName, button) {
+  if (!state.namespaceToken) {
+    alert('You are in Viewer Mode. Provide the ownership token to modify this API.');
+    return;
+  }
+  
   var baseUrl = window.location.origin;
   var originalText = button.textContent;
   button.disabled = true;
   fetch(baseUrl + '/' + state.namespace + '/' + resourceName + '/records', {
-    method: 'DELETE'
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + state.namespaceToken }
   })
     .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
     .then(function (res) {
@@ -931,12 +981,13 @@ function escapeHtml(value) {
 // FETCH SNIPPET
 // ============================================================
 function buildFetchSnippet(method, url, auth, schema) {
-  var token = auth ? auth.token : null;
+  var mockAuthToken = auth ? auth.token : null;
+  var nsToken = state.namespaceToken;
 
   if (method === 'GET') {
     var snippet = 'const res = await fetch("' + url + '"';
-    if (token) {
-      snippet += ', {\n  headers: { "Authorization": "Bearer ' + token + '" }\n}';
+    if (mockAuthToken) {
+      snippet += ', {\n  headers: { "Authorization": "Bearer ' + mockAuthToken + '" }\n}';
     }
     snippet += ');\nconst data = await res.json();';
     return snippet;
@@ -955,8 +1006,8 @@ function buildFetchSnippet(method, url, auth, schema) {
       .join('\n');
 
     var headersBlock = '    "Content-Type": "application/json"';
-    if (token) {
-      headersBlock += ',\n    "Authorization": "Bearer ' + token + '"';
+    if (nsToken) {
+      headersBlock += ',\n    "Authorization": "Bearer ' + nsToken + '"';
     }
 
     return 'const res = await fetch("' + url + '", {\n' +
@@ -968,8 +1019,8 @@ function buildFetchSnippet(method, url, auth, schema) {
 
   if (method === 'DELETE') {
     var delSnippet = 'const res = await fetch("' + url + '", {\n  method: "DELETE"';
-    if (token) {
-      delSnippet += ',\n  headers: { "Authorization": "Bearer ' + token + '" }';
+    if (nsToken) {
+      delSnippet += ',\n  headers: { "Authorization": "Bearer ' + nsToken + '" }';
     }
     delSnippet += '\n});\nconst data = await res.json();';
     return delSnippet;
@@ -1009,7 +1060,15 @@ function renderFetchSnippets(data, endpoints) {
 
 function buildCurl(method, url, firstRecord, auth) {
   var parts = ['curl -X ' + method];
-  if (auth) parts.push('-H "Authorization: Bearer ' + auth.token + '"');
+  var mockAuthToken = auth ? auth.token : null;
+  var nsToken = state.namespaceToken;
+
+  if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
+    if (nsToken) parts.push('-H "Authorization: Bearer ' + nsToken + '"');
+  } else {
+    if (mockAuthToken) parts.push('-H "Authorization: Bearer ' + mockAuthToken + '"');
+  }
+
   parts.push('-H "Content-Type: application/json"');
   if ((method === 'POST' || method === 'PUT') && firstRecord && Object.keys(firstRecord).length > 0) {
     parts.push("--data '" + JSON.stringify(firstRecord) + "'");
@@ -1071,7 +1130,16 @@ function sendTestRequest() {
   var options = { method: method, headers: { 'Content-Type': 'application/json' } };
 
   var authHeader = document.getElementById('tester-auth-header').value.trim();
-  if (authHeader) options.headers['Authorization'] = authHeader;
+
+  if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
+    if (!state.namespaceToken) {
+      alert('You are in Viewer Mode. Provide the ownership token to modify this API.');
+      return;
+    }
+    options.headers['Authorization'] = 'Bearer ' + state.namespaceToken;
+  } else {
+    if (authHeader) options.headers['Authorization'] = authHeader;
+  }
 
   if (method === 'POST' || method === 'PUT') {
     var body = document.getElementById('tester-body').value.trim();
@@ -1110,6 +1178,358 @@ function showTesterResponse(status, data) {
 
   bodyEl.textContent = JSON.stringify(data, null, 2);
   responseEl.classList.remove('hidden');
+}
+
+// ============================================================
+// DRAFT & PERSISTENCE
+// ============================================================
+const persistDraft = debounce(function() {
+  if (state.endpointData) return;
+  var step = document.getElementById('step-2').classList.contains('hidden') ? 1 : 2;
+  var draft = {
+    namespaceDraft: document.getElementById('input-namespace').value.trim(),
+    resources: state.resources.slice(),
+    authEnabled: state.authEnabled,
+    step: step,
+    currentForm: null,
+    step2Records: []
+  };
+
+  draft.currentForm = {
+    name: document.getElementById('input-resource').value.trim(),
+    route_path: document.getElementById('input-route').value.trim(),
+    schemaText: document.getElementById('schema-json-input').value
+  };
+
+  if (draft.authEnabled) {
+    draft.auth = {
+      login_route: document.getElementById('input-login-route').value.trim(),
+      token: document.getElementById('input-token').value.trim(),
+      protected_routes: []
+    };
+    var inputs = document.querySelectorAll('#protected-routes-list input[type="checkbox"]');
+    inputs.forEach(function(input) {
+      if (input.checked) draft.auth.protected_routes.push(input.value);
+    });
+  }
+
+  if (step === 2) {
+    draft.step2Records = state.resources.map(function(_, idx) {
+      var el = document.getElementById('records-json-input-' + idx);
+      return el ? el.value : '';
+    });
+  }
+
+  localStorage.setItem('mockdock_draft_v1', JSON.stringify(draft));
+}, 300);
+
+function checkPersistenceOnLoad() {
+  var rawRecent = localStorage.getItem('mockdock_recent_v1');
+  if (rawRecent) {
+    try {
+      var recent = JSON.parse(rawRecent);
+      if (recent.length > 0) renderRecentApis(recent);
+    } catch (e) {}
+  }
+
+  var rawDraft = localStorage.getItem('mockdock_draft_v1');
+  if (rawDraft && state.resources.length === 0 && !state.endpointData) {
+    try {
+      var draft = JSON.parse(rawDraft);
+      restoreDraftData(draft);
+    } catch (e) {}
+  }
+}
+
+function restoreDraftData(draft) {
+  state.resources = draft.resources || [];
+  renderResourceList();
+  
+  if (state.resources.length > 0) {
+    document.getElementById('resource-form-label').textContent = 'Resource ' + (state.resources.length + 1);
+  }
+
+  if (draft.namespaceDraft) {
+    document.getElementById('input-namespace').value = draft.namespaceDraft;
+    state.namespaceDraft = draft.namespaceDraft;
+    checkNamespaceAvailability(draft.namespaceDraft);
+  }
+
+  if (draft.authEnabled) {
+    document.getElementById('auth-toggle').checked = true;
+    toggleAuth();
+    if (draft.auth) {
+      document.getElementById('input-login-route').value = draft.auth.login_route || '';
+      document.getElementById('input-token').value = draft.auth.token || '';
+      updateProtectedRoutesList();
+    }
+  } else {
+    document.getElementById('auth-toggle').checked = false;
+    toggleAuth();
+  }
+
+  if (draft.currentForm) {
+    document.getElementById('input-resource').value = draft.currentForm.name || '';
+    document.getElementById('input-route').value = draft.currentForm.route_path || '';
+    document.getElementById('schema-json-input').value = draft.currentForm.schemaText || '';
+    renderRoutePreview();
+  }
+
+  if (draft.step === 2) {
+    buildStep2();
+    showStep(2);
+    if (draft.step2Records && draft.step2Records.length > 0) {
+      setTimeout(function() {
+        draft.step2Records.forEach(function(val, idx) {
+          var el = document.getElementById('records-json-input-' + idx);
+          if (el && val) el.value = val;
+        });
+      }, 50);
+    }
+  }
+}
+
+function renderRecentApis(recent) {
+  var container = document.getElementById('recent-apis-container');
+  var list = document.getElementById('recent-apis-list');
+  if (!recent || recent.length === 0) {
+    container.classList.add('hidden');
+    return;
+  }
+  
+  container.classList.remove('hidden');
+  list.innerHTML = '';
+  
+  recent.forEach(function(api) {
+    var item = document.createElement('div');
+    item.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); cursor:pointer;";
+    
+    var info = document.createElement('div');
+    info.innerHTML = '<strong style="color:var(--acc2);font-family:var(--mono);font-size:0.75rem;">' + escapeHtml(api.slug) + '</strong><div style="font-size:0.6rem;color:var(--mut);">' + escapeHtml(timeAgo(api.created_at)) + '</div>';
+    
+    var btn = document.createElement('button');
+    btn.className = "btn-ghost";
+    btn.style.padding = "4px 8px";
+    btn.textContent = "Open";
+    
+    item.onclick = function() { restoreRecentApi(api); };
+    
+    item.appendChild(info);
+    item.appendChild(btn);
+    list.appendChild(item);
+  });
+}
+
+function clearRecentApis() {
+  localStorage.removeItem('mockdock_recent_v1');
+  renderRecentApis([]);
+}
+
+function removeRecentApi(slug) {
+  var recent = [];
+  try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1')); } catch(e){}
+  recent = recent.filter(function(r) { return r.slug !== slug; });
+  localStorage.setItem('mockdock_recent_v1', JSON.stringify(recent));
+  renderRecentApis(recent);
+}
+
+function restoreRecentApi(api) {
+  state.namespace = api.slug;
+  state.namespaceToken = api.token;
+  
+  fetch('/' + api.slug + '/health')
+    .then(function(res) {
+      if(res.status === 410) {
+        alert('This namespace has expired according to the server.');
+        removeRecentApi(api.slug);
+      } else if (!res.ok) {
+        alert('Namespace not found.');
+        removeRecentApi(api.slug);
+      } else {
+        res.json().then(function(data) {
+            var mockData = {
+              namespace: api.slug,
+              token: api.token,
+              expires_at: "Active (resumed)",
+              interceptor_tag: '<script src="' + window.location.origin + '/interceptor/' + api.slug + '.js"></script>',
+              resources: data.map(function(d) { return { name: d.name, route_path: d.route_path }; })
+            };
+            state.endpointData = mockData;
+            state.auth = null; 
+            renderOutput(mockData);
+        });
+      }
+    }).catch(function() {
+      alert('Network error trying to restore API.');
+    });
+}
+
+function manualOpenApi() {
+  var slugEl = document.getElementById('manual-slug-input');
+  var errorEl = document.getElementById('manual-open-error');
+  var slug = slugEl.value.trim();
+  
+  errorEl.classList.add('hidden');
+  
+  if (!slug) {
+    errorEl.textContent = 'Please enter a namespace slug';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  
+  fetch('/api/namespace/' + slug)
+    .then(function(res) {
+      if (res.status === 404) {
+        errorEl.textContent = 'API not found. It may have expired or never existed.';
+        errorEl.classList.remove('hidden');
+        throw new Error('404');
+      }
+      if (!res.ok) {
+        errorEl.textContent = 'Error opening API. Status: ' + res.status;
+        errorEl.classList.remove('hidden');
+        throw new Error('Error');
+      }
+      return res.json();
+    })
+    .then(function(data) {
+       state.namespace = slug;
+       state.endpointData = data;
+       
+       var loadedToken = null;
+       try {
+           var recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]');
+           var found = recent.find(function(r) { return r.slug === slug; });
+           if (found) loadedToken = found.token;
+       } catch(e) {}
+       
+       state.namespaceToken = loadedToken || null;
+       data.token = state.namespaceToken; 
+       data.expires_at = "Active (read-only mode if no token)"; 
+       if (data.auth) {
+           state.auth = data.auth;
+           document.getElementById('auth-toggle').checked = true;
+           toggleAuth();
+           document.getElementById('input-login-route').value = data.auth.login_route || '';
+           document.getElementById('input-token').value = data.auth.token || '';
+           
+           var container = document.getElementById('protected-routes-list');
+           container.innerHTML = '';
+           if (data.auth.protected_routes) {
+               data.auth.protected_routes.forEach(function(route) {
+                  var label = document.createElement('label');
+                  label.style.display = 'flex';
+                  label.style.alignItems = 'center';
+                  label.style.gap = '8px';
+                  label.style.fontFamily = 'var(--mono)';
+                  label.style.fontSize = '0.8rem';
+                  label.style.color = 'var(--text)';
+                  label.style.marginTop = '4px';
+
+                  var cb = document.createElement('input');
+                  cb.type = 'checkbox';
+                  cb.value = route;
+                  cb.checked = true;
+                  cb.id = 'protect-route-cb';
+
+                  label.appendChild(cb);
+                  label.appendChild(document.createTextNode(route));
+                  container.appendChild(label);
+               });
+           }
+       } else {
+           state.auth = null;
+           var authToggle = document.getElementById('auth-toggle');
+           if (authToggle.checked) {
+               authToggle.checked = false;
+               toggleAuth();
+           }
+           document.getElementById('input-login-route').value = '';
+           document.getElementById('input-token').value = '';
+           document.getElementById('protected-routes-list').innerHTML = '';
+       }
+       renderOutput(data);
+       
+       slugEl.value = '';
+    })
+    .catch(function(err) {});
+}
+
+function unlockOwnerMode() {
+  var tokenEl = document.getElementById('viewer-token-input');
+  var errEl = document.getElementById('viewer-token-error');
+  var btn = document.getElementById('viewer-unlock-btn');
+  var token = tokenEl.value.trim();
+  
+  errEl.classList.add('hidden');
+  
+  if (!token) {
+    errEl.textContent = 'Please enter a token.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  
+  if (!state.endpointData || !state.endpointData.resources || state.endpointData.resources.length === 0) {
+      _finalizeUnlock(token);
+      return;
+  }
+  
+  var firstResource = state.endpointData.resources[0].name;
+  var url = window.location.origin + '/' + state.namespace + '/' + firstResource;
+  
+  var originalBtnText = btn.textContent;
+  btn.textContent = 'Verifying...';
+  btn.disabled = true;
+  
+  fetch(url, {
+      method: 'POST',
+      headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+  })
+  .then(function(res) {
+      if (res.status === 401) {
+          return res.json().then(function(data) {
+              if (data.error && data.error.indexOf('namespace') !== -1) {
+                  throw new Error('invalid_token');
+              }
+              _finalizeUnlock(token);
+          }).catch(function() { throw new Error('invalid_token'); });
+      } else {
+          _finalizeUnlock(token);
+      }
+  })
+  .catch(function(err) {
+      if (err.message === 'invalid_token') {
+          errEl.textContent = 'Invalid ownership token. Please check and try again.';
+      } else {
+          errEl.textContent = 'Network error checking token.';
+      }
+      errEl.classList.remove('hidden');
+  })
+  .finally(function() {
+      btn.textContent = originalBtnText;
+      btn.disabled = false;
+  });
+}
+
+function _finalizeUnlock(token) {
+  state.namespaceToken = token;
+  
+  if (state.endpointData) {
+      state.endpointData.token = token;
+  }
+  
+  var newRecent = { slug: state.namespace, token: token, created_at: new Date().toISOString() };
+  var recent = [];
+  try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]'); } catch(e){}
+  recent = recent.filter(function(r) { return r.slug !== state.namespace; });
+  recent.unshift(newRecent);
+  if (recent.length > 5) recent = recent.slice(0, 5);
+  localStorage.setItem('mockdock_recent_v1', JSON.stringify(recent));
+
+  renderOutput(state.endpointData);
 }
 
 // ============================================================

@@ -497,6 +497,24 @@
     </div>
     <div class="panel-body">
 
+      <!-- RESUMPTION PANEL -->
+      <div id="resumption-panel" style="margin-bottom:20px; background:rgba(0,0,0,.3); border:1px solid var(--bor); border-radius:12px; padding:14px;">
+        <div class="field-label">Open Existing API</div>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="text" id="manual-slug-input" class="text-input" placeholder="e.g. team-demo" autocomplete="off" style="padding:6px 10px; font-size:0.75rem;" />
+          <button class="btn-ghost" style="white-space:nowrap; padding:6px 12px;" onclick="manualOpenApi()">Open</button>
+        </div>
+        <div id="manual-open-error" class="hidden" style="font-family:var(--m);font-size:0.65rem;color:var(--red);margin-top:-6px;margin-bottom:8px;"></div>
+        
+        <div id="recent-apis-container" class="hidden">
+          <div class="field-label" style="justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+            <span>Recent APIs</span>
+            <button id="clear-recent-btn" class="btn-ghost" style="padding:2px 6px; font-size:0.6rem; margin:0;" onclick="clearRecentApis()">Clear</button>
+          </div>
+          <div id="recent-apis-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+      </div>
+
       <!-- STEP INDICATOR -->
       <div class="step-indicator">
         <div class="step-pill active" id="step-pill-1">
@@ -639,11 +657,36 @@
           <div id="output-schema-summary" class="schema-chips"></div>
         </div>
 
-        <div class="output-block hidden" id="output-token-block">
-          <div class="output-block-label">Access Token</div>
-          <div class="code-row">
-            <code id="output-token-value" class="code-value"></code>
-            <button class="btn-copy" onclick="copyText('output-token-value', this)">Copy</button>
+        <div class="output-block hidden" id="output-share-block">
+          <div class="output-block-label" style="display:flex; justify-content:space-between; align-items:center;">
+             <span>Share API</span>
+             <span id="output-mode-badge" style="padding:3px 8px; border-radius:6px; font-size:0.62rem; font-weight:800; letter-spacing:0.06em; text-transform:uppercase;"></span>
+          </div>
+
+          <div style="font-size:0.75rem; font-weight:600; color:var(--text); margin-bottom:4px; margin-top:8px;">Public Access (safe to share)</div>
+          <div style="font-family:var(--m); font-size:0.65rem; color:var(--mut); margin-bottom:8px;">Share the API URL with others for read access</div>
+          <div class="code-row" style="margin-bottom:16px;">
+            <code id="output-share-url" class="code-value"></code>
+            <button class="btn-copy" onclick="copyText('output-share-url', this)">Copy</button>
+          </div>
+          
+          <div id="output-mode-owner" class="hidden" style="border-top:1px solid var(--bor); padding-top:16px;">
+             <div style="font-size:0.75rem; font-weight:600; color:var(--text); margin-bottom:4px;">Owner Access (private)</div>
+             <div style="font-family:var(--m); font-size:0.65rem; color:var(--mut); margin-bottom:8px;">Share the token only if you want someone to modify the API</div>
+             <div class="code-row">
+               <code id="output-token-value" class="code-value" style="color:var(--acc2);"></code>
+               <button class="btn-copy" onclick="copyText('output-token-value', this)">Copy</button>
+             </div>
+          </div>
+          
+          <div id="output-mode-viewer" class="hidden" style="border-top:1px solid var(--bor); padding-top:16px;">
+             <div style="font-size:0.75rem; font-weight:600; color:var(--acc2); margin-bottom:4px;">Unlock Owner Mode</div>
+             <div style="font-family:var(--m); font-size:0.65rem; color:var(--mut); margin-bottom:8px;">You are in Viewer Mode. Provide the ownership token to modify this API.</div>
+             <div style="display:flex; gap:8px;">
+               <input type="text" id="viewer-token-input" class="text-input" placeholder="Enter ownership token" style="padding:6px 10px; font-size:0.75rem; flex:1;" autocomplete="off" />
+               <button id="viewer-unlock-btn" class="btn-ghost" style="padding:6px 14px; white-space:nowrap;" onclick="unlockOwnerMode()">Unlock Access</button>
+             </div>
+             <div id="viewer-token-error" class="hidden" style="font-family:var(--m); font-size:0.65rem; color:var(--red); margin-top:6px;"></div>
           </div>
         </div>
 

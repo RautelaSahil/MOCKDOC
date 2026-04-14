@@ -173,9 +173,11 @@ def create():
             return jsonify({"error": "failed to generate unique namespace, please try again"}), 500
 
     expires_at = (datetime.now(timezone.utc) + timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    namespace_token = None
-    if isinstance(auth, dict):
-        namespace_token = auth.get("token", "").strip() or None
+
+    # Always generate a secure ownership token for the namespace regardless of
+    # whether mock auth (auth_config) is enabled. This is platform-level ownership,
+    # separate from auth_config.token which is used for mock API simulation.
+    namespace_token = secrets.token_hex(16)
 
     insert_namespace(slug, expires_at, namespace_token)
 

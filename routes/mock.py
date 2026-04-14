@@ -37,6 +37,8 @@ def check_namespace(slug):
 
 
 def check_auth(slug, route_path):
+    """Mock-auth check: enforces auth_config.token for protected routes.
+    This is separate from namespace ownership (check_ownership)."""
     auth = get_auth_config(slug)
     if not auth:
         return None
@@ -47,6 +49,29 @@ def check_auth(slug, route_path):
     expected = f"Bearer {auth.get('token')}"
     if auth_header != expected:
         return jsonify({"error": "unauthorized"}), 401
+
+    return None
+
+
+def check_ownership(ns):
+    """Platform-level ownership check using namespaces.token.
+    Must be called on all write operations (POST / PUT / DELETE).
+    GET operations are intentionally excluded.
+
+    Returns a (response, status) error tuple on failure, or None on success.
+    """
+    ns_token = ns.get("token")
+    # Treat NULL token (legacy namespace) as write-disabled.
+    if not ns_token:
+        return jsonify({"error": "unauthorized: this namespace has no ownership token"}), 401
+
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "unauthorized: missing or malformed Authorization header"}), 401
+
+    provided_token = auth_header[len("Bearer "):]
+    if provided_token != ns_token:
+        return jsonify({"error": "unauthorized: invalid namespace token"}), 401
 
     return None
 
@@ -150,6 +175,11 @@ def create_record(slug, resource_name):
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
 
+    # Platform ownership check — must precede all write logic.
+    ownership_err = check_ownership(ns)
+    if ownership_err is not None:
+        return ownership_err
+
     resource = get_resource_by_route(slug, resource_name)
     if not resource:
         return jsonify({"error": "resource not found"}), 404
@@ -187,6 +217,11 @@ def update_record_route(slug, resource_name, record_id):
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
+
+    # Platform ownership check — must precede all write logic.
+    ownership_err = check_ownership(ns)
+    if ownership_err is not None:
+        return ownership_err
 
     resource = get_resource_by_route(slug, resource_name)
     if not resource:
@@ -227,6 +262,11 @@ def delete_record_route(slug, resource_name, record_id):
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
 
+    # Platform ownership check — must precede all write logic.
+    ownership_err = check_ownership(ns)
+    if ownership_err is not None:
+        return ownership_err
+
     resource = get_resource_by_route(slug, resource_name)
     if not resource:
         return jsonify({"error": "resource not found"}), 404
@@ -250,6 +290,11 @@ def reset_records_route(slug, resource_name):
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
+
+    # Platform ownership check — must precede all write logic.
+    ownership_err = check_ownership(ns)
+    if ownership_err is not None:
+        return ownership_err
 
     resource = get_resource_by_name(slug, resource_name)
     if not resource:
