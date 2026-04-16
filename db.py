@@ -3,7 +3,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "mockdock.db")
+DB_PATH = os.environ.get("DB_PATH", "/var/data/mockdock.db")
 
 
 def get_connection():
