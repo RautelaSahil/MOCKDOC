@@ -12,7 +12,7 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = """You are a JSON schema generator for a mock REST API tool called MockDock.
 
-Given a description of a resource, return ONLY a valid JSON object (no markdown, no explanation) 
+Given a description of a resource, return ONLY a valid JSON object JSON inside JSON is not applicable ,(no markdown, no explanation) 
 that represents a MockDock schema. 
 
 MockDock schema rules:
