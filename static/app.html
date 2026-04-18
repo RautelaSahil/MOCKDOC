@@ -466,92 +466,8 @@
         <div id="step1-error-card3" class="error-msg hidden" style="margin-top:8px;"></div>
       </div>
 
-      <!-- OUTPUT panel (post-generate) -->
-      <section id="output-panel" class="hidden">
-        <!-- Script tag -->
-        <div class="out-block out-primary">
-          <div class="out-lbl">Script tag</div>
-          <div class="code-row">
-            <code id="output-script-tag" class="code-val" style="font-size:.65rem;"></code>
-            <button class="btn-copy" onclick="copyText('output-script-tag', this)">Copy</button>
-          </div>
-          <div class="session-note">⚠ Records added during testing are session-only.</div>
-        </div>
-
-        <!-- Schema chips -->
-        <div class="out-block">
-          <div class="out-lbl">Schema</div>
-          <div id="output-schema-summary" class="schema-chips"></div>
-        </div>
-
-        <!-- Share / token -->
-        <div class="out-block hidden" id="output-share-block">
-          <div class="out-lbl" style="display:flex;justify-content:space-between;">
-            <span>Share API</span><span id="output-mode-badge"></span>
-          </div>
-          <div class="code-row" style="margin-bottom:10px;">
-            <code id="output-share-url" class="code-val"></code>
-            <button class="btn-copy" onclick="copyText('output-share-url', this)">Copy</button>
-          </div>
-          <div id="output-mode-owner" class="hidden">
-            <div style="font-size:.7rem;font-weight:600;margin-bottom:4px;">Owner Token</div>
-            <div class="code-row">
-              <code id="output-token-value" class="code-val" style="color:#0891b2;"></code>
-              <button class="btn-copy" onclick="copyText('output-token-value', this)">Copy</button>
-            </div>
-          </div>
-          <div id="output-mode-viewer" class="hidden">
-            <div style="display:flex;gap:7px;margin-top:8px;">
-              <input type="text" id="viewer-token-input" class="inp" placeholder="Enter ownership token" autocomplete="off" style="flex:1;" />
-              <button id="viewer-unlock-btn" class="btn-ghost" style="padding:6px 12px;" onclick="unlockOwnerMode()">Unlock</button>
-            </div>
-            <div id="viewer-token-error" class="hidden" style="font-family:var(--m);font-size:.62rem;color:var(--red);margin-top:5px;"></div>
-          </div>
-        </div>
-
-        <!-- Expiry -->
-        <div class="out-block">
-          <div class="out-lbl">Expires</div>
-          <div id="output-expiry" class="expiry-val mono"></div>
-        </div>
-
-        <!-- Endpoints — organised collapsible cards -->
-        <div class="out-block">
-          <div class="out-lbl">Endpoints</div>
-          <div id="output-endpoints" class="ep-list"></div>
-        </div>
-
-        <!-- Fetch snippets (hidden — consumed by ep-cards) -->
-        <div class="out-block hidden" id="output-fetch-block">
-          <div id="output-fetch-snippets"></div>
-        </div>
-
-        <!-- Inline Tester -->
-        <div class="out-block">
-          <div class="out-lbl">Inline API Tester</div>
-          <div class="tester-row"><select id="tester-method-select" class="select-inp" onchange="onTesterMethodChange()"></select></div>
-          <div id="tester-body-wrap" class="hidden">
-            <label class="field-lbl">Request Body (JSON)</label>
-            <textarea id="tester-body" class="code-inp" rows="4"></textarea>
-          </div>
-          <div id="tester-auth-wrap" class="hidden">
-            <label class="field-lbl">Auth Header</label>
-            <input type="text" id="tester-auth-header" class="inp" placeholder="Bearer mock_abc123" />
-          </div>
-          <button class="btn-primary" onclick="sendTestRequest()" style="margin-top:8px;">Send Request</button>
-          <div id="tester-response" class="hidden tester-resp">
-            <div class="resp-meta"><span class="resp-lbl">Response</span><span id="tester-status-badge" class="status-badge"></span></div>
-            <pre id="tester-response-body" class="resp-body"></pre>
-          </div>
-        </div>
-
-        <!-- Request Logs -->
-        <div class="out-block" id="output-logs-block">
-          <div class="out-lbl">Request Logs</div>
-          <div id="output-logs-empty" class="logs-empty">No requests logged yet.</div>
-          <div id="output-logs-table"></div>
-        </div>
-      </section>
+      <!-- output-panel kept as hidden anchor for script.js compat -->
+      <section id="output-panel" class="hidden"></section>
 
     </div>
   </div>
@@ -587,6 +503,165 @@
   </div>
 
 </div><!-- /cards-row -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     OUTPUT ROW — shown after "Generate Mock API" is clicked
+     Each output type gets its own card, same style as cards above
+     ════════════════════════════════════════════════════════════ -->
+<div id="output-cards-row" class="hidden" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:14px 20px 0;max-width:1400px;margin:0 auto;">
+
+  <!-- OUT-A: Script Tag -->
+  <div class="card out-card" id="oc-script">
+    <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+      <div class="card-num" style="background:rgba(156,141,212,.15);">⟨/⟩</div>
+      <div><div class="card-title">Script Tag</div><div class="card-sub">Drop into your HTML</div></div>
+    </div>
+    <div class="card-body">
+      <div class="out-primary">
+        <div class="code-row">
+          <code id="output-script-tag" class="code-val" style="font-size:.62rem;word-break:break-all;"></code>
+          <button class="btn-copy" onclick="copyText('output-script-tag',this)">Copy</button>
+        </div>
+        <div class="session-note">⚠ Session-only records.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUT-B: Schema -->
+  <div class="card out-card" id="oc-schema">
+    <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+      <div class="card-num" style="background:rgba(156,141,212,.15);">{ }</div>
+      <div><div class="card-title">Schema</div><div class="card-sub">Field definitions</div></div>
+    </div>
+    <div class="card-body">
+      <div id="output-schema-summary" class="schema-chips"></div>
+    </div>
+  </div>
+
+  <!-- OUT-C: Share & Expiry -->
+  <div class="card out-card" id="oc-share">
+    <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+      <div class="card-num" style="background:rgba(156,141,212,.15);">↗</div>
+      <div><div class="card-title">Share &amp; Expiry</div><div class="card-sub">URL, token, TTL</div></div>
+    </div>
+    <div class="card-body">
+      <!-- share block (script.js toggles hidden) -->
+      <div id="output-share-block" class="hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span class="out-lbl" style="margin:0;">Share URL</span>
+          <span id="output-mode-badge" style="font-family:var(--m);font-size:.56rem;font-weight:700;letter-spacing:.06em;"></span>
+        </div>
+        <div class="code-row" style="margin-bottom:10px;">
+          <code id="output-share-url" class="code-val" style="font-size:.62rem;"></code>
+          <button class="btn-copy" onclick="copyText('output-share-url',this)">Copy</button>
+        </div>
+        <div id="output-mode-owner" class="hidden">
+          <div class="field-lbl" style="margin-bottom:4px;">Owner Token</div>
+          <div class="code-row">
+            <code id="output-token-value" class="code-val" style="color:#0891b2;font-size:.62rem;"></code>
+            <button class="btn-copy" onclick="copyText('output-token-value',this)">Copy</button>
+          </div>
+        </div>
+        <div id="output-mode-viewer" class="hidden">
+          <div style="display:flex;gap:7px;margin-top:8px;">
+            <input type="text" id="viewer-token-input" class="inp" placeholder="Enter ownership token" autocomplete="off" style="flex:1;" />
+            <button id="viewer-unlock-btn" class="btn-ghost" style="padding:6px 12px;" onclick="unlockOwnerMode()">Unlock</button>
+          </div>
+          <div id="viewer-token-error" class="hidden" style="font-family:var(--m);font-size:.62rem;color:var(--red);margin-top:5px;"></div>
+        </div>
+        <div class="divider"></div>
+      </div>
+      <div class="field-lbl" style="margin-bottom:4px;">Expires</div>
+      <div id="output-expiry" class="expiry-val mono"></div>
+    </div>
+  </div>
+
+  <!-- OUT-D: GET endpoint -->
+  <div class="card out-card ep-GET" id="oc-get">
+    <div class="card-head" style="border-bottom:2px solid rgba(5,150,105,.2);">
+      <div class="card-num" style="background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.3);color:#059669;">GET</div>
+      <div><div class="card-title">GET</div><div class="card-sub">Fetch all / by ID</div></div>
+    </div>
+    <div class="card-body">
+      <div id="oc-get-content"><div class="logs-empty">Waiting for generate…</div></div>
+    </div>
+  </div>
+
+  <!-- OUT-E: POST endpoint -->
+  <div class="card out-card ep-POST" id="oc-post">
+    <div class="card-head" style="border-bottom:2px solid rgba(37,99,235,.2);">
+      <div class="card-num" style="background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.3);color:#2563eb;">POST</div>
+      <div><div class="card-title">POST</div><div class="card-sub">Create a record</div></div>
+    </div>
+    <div class="card-body">
+      <div id="oc-post-content"><div class="logs-empty">Waiting for generate…</div></div>
+    </div>
+  </div>
+
+  <!-- OUT-F: PUT endpoint -->
+  <div class="card out-card ep-PUT" id="oc-put">
+    <div class="card-head" style="border-bottom:2px solid rgba(234,88,12,.2);">
+      <div class="card-num" style="background:rgba(234,88,12,.12);border-color:rgba(234,88,12,.3);color:#ea580c;">PUT</div>
+      <div><div class="card-title">PUT</div><div class="card-sub">Update by ID</div></div>
+    </div>
+    <div class="card-body">
+      <div id="oc-put-content"><div class="logs-empty">Waiting for generate…</div></div>
+    </div>
+  </div>
+
+  <!-- OUT-G: DELETE endpoint -->
+  <div class="card out-card ep-DELETE" id="oc-delete">
+    <div class="card-head" style="border-bottom:2px solid rgba(231,122,115,.2);">
+      <div class="card-num" style="background:rgba(231,122,115,.12);border-color:rgba(231,122,115,.3);color:#e63946;">DEL</div>
+      <div><div class="card-title">DELETE</div><div class="card-sub">Remove by ID</div></div>
+    </div>
+    <div class="card-body">
+      <div id="oc-delete-content"><div class="logs-empty">Waiting for generate…</div></div>
+    </div>
+  </div>
+
+  <!-- OUT-H: Tester -->
+  <div class="card out-card" id="oc-tester">
+    <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+      <div class="card-num" style="background:rgba(156,141,212,.15);">▶</div>
+      <div><div class="card-title">API Tester</div><div class="card-sub">Send live requests</div></div>
+    </div>
+    <div class="card-body">
+      <div class="tester-row"><select id="tester-method-select" class="select-inp" onchange="onTesterMethodChange()"></select></div>
+      <div id="tester-body-wrap" class="hidden">
+        <label class="field-lbl">Request Body (JSON)</label>
+        <textarea id="tester-body" class="code-inp" rows="4"></textarea>
+      </div>
+      <div id="tester-auth-wrap" class="hidden">
+        <label class="field-lbl">Auth Header</label>
+        <input type="text" id="tester-auth-header" class="inp" placeholder="Bearer mock_abc123" />
+      </div>
+      <button class="btn-primary" onclick="sendTestRequest()" style="margin-top:8px;">Send Request</button>
+      <div id="tester-response" class="hidden tester-resp">
+        <div class="resp-meta"><span class="resp-lbl">Response</span><span id="tester-status-badge" class="status-badge"></span></div>
+        <pre id="tester-response-body" class="resp-body"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUT-I: Logs — spans full width -->
+  <div class="card out-card" id="oc-logs" style="grid-column:1/-1;">
+    <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+      <div class="card-num" style="background:rgba(156,141,212,.15);">≡</div>
+      <div><div class="card-title">Request Logs</div><div class="card-sub">Live activity feed</div></div>
+    </div>
+    <div class="card-body" id="output-logs-block">
+      <div id="output-logs-empty" class="logs-empty">No requests logged yet.</div>
+      <div id="output-logs-table"></div>
+    </div>
+  </div>
+
+  <!-- hidden fetch-snippets anchor (consumed by JS) -->
+  <div id="output-fetch-block" class="hidden"><div id="output-fetch-snippets"></div></div>
+  <!-- hidden endpoints anchor (consumed by JS) -->
+  <div id="output-endpoints" class="hidden"></div>
+
+</div><!-- /output-cards-row -->
 
 <!-- FOOTER BAR -->
 <div class="footer-bar">
@@ -636,115 +711,94 @@ window.addEventListener('load', function() {
   if (rsec) new MutationObserver(syncSeedPlaceholder).observe(rsec, { childList: true, subtree: true });
   syncSeedPlaceholder();
 
-  /* ─── 2. Override fillOutputPanel to trigger endpoint re-render ─── */
+  /* ─── 2. Override fillOutputPanel to show the output cards row ─── */
   var origFillOutputPanel = window.fillOutputPanel;
   if (typeof window.fillOutputPanel === 'function') {
     window.fillOutputPanel = function(data) {
       origFillOutputPanel(data);
-      setTimeout(reRenderEndpoints, 80);
-      setTimeout(patchLogRenderer, 80);
+      setTimeout(showOutputCards, 80);
     };
   }
 
-  // Also watch output-panel becoming visible
+  // Also watch output-panel becoming visible (script.js may just toggle it)
   var opanel = document.getElementById('output-panel');
   if (opanel) {
     new MutationObserver(function(muts) {
       muts.forEach(function(m) {
         if (m.attributeName === 'class' && !opanel.classList.contains('hidden')) {
-          setTimeout(reRenderEndpoints, 100);
-          setTimeout(patchLogRenderer, 100);
+          setTimeout(showOutputCards, 100);
         }
       });
     }).observe(opanel, { attributes: true });
   }
 
-  /* ─── 3. Endpoint card renderer ─── */
-  function reRenderEndpoints() {
+  /* ─── 3. Show output row + populate each method card ─── */
+  function showOutputCards() {
+    var row = document.getElementById('output-cards-row');
+    if (!row) return;
+    // Reveal the row
+    row.classList.remove('hidden');
+    row.style.display = 'grid';
+    // Scroll to it smoothly
+    setTimeout(function(){ row.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
+    // Populate method cards from the hidden output-endpoints list
+    populateMethodCards();
+    patchLogRenderer();
+  }
+
+  /* ─── 4. Parse endpoint list and fill GET/POST/PUT/DELETE cards ─── */
+  function populateMethodCards() {
     var epList = document.getElementById('output-endpoints');
     if (!epList) return;
 
-    // Collect data from whatever script.js put in there
-    var rawItems = epList.querySelectorAll('.ep-row, [class*="ep-"], .method-badge');
+    // Gather all ep-row / method-badge items script.js injected
     var eps = [];
-
-    // Try to read existing ep-row style items
-    var epRows = epList.querySelectorAll('.ep-row');
-    if (epRows.length) {
-      epRows.forEach(function(row) {
-        var badge  = row.querySelector('.method-badge');
-        var method = badge ? badge.textContent.trim() : '';
-        var urlEl  = row.querySelector('.ep-card-url');
-        var urlText = urlEl ? urlEl.textContent.trim() : '';
-        if (!urlText) {
-          row.childNodes.forEach(function(n) {
-            if (n.nodeType === 3) { var t = n.textContent.trim(); if (t) urlText = t; }
-          });
-        }
-        if (method) eps.push({ method: method, url: urlText });
-      });
-    }
-
-    // Also collect any method-badge spans that aren't already in ep-cards
-    if (!eps.length) {
-      var badges = epList.querySelectorAll('.method-badge');
-      badges.forEach(function(badge) {
+    var rows = epList.querySelectorAll('.ep-row, [class*="ep-row"]');
+    if (!rows.length) {
+      // fallback: find method-badges anywhere inside epList
+      epList.querySelectorAll('.method-badge').forEach(function(badge) {
         var method = badge.textContent.trim();
         var parent = badge.parentElement;
-        var spans  = parent ? parent.querySelectorAll('span:not(.method-badge), code') : [];
-        var urlText = '';
-        spans.forEach(function(s) { if (!urlText && s.textContent.trim()) urlText = s.textContent.trim(); });
-        if (method) eps.push({ method: method, url: urlText });
+        var urlSpan = parent.querySelector('span:not(.method-badge), code, .ep-card-url');
+        eps.push({ method: method, url: urlSpan ? urlSpan.textContent.trim() : '' });
+      });
+    } else {
+      rows.forEach(function(row) {
+        var badge = row.querySelector('.method-badge');
+        var urlEl  = row.querySelector('.ep-card-url, span:not(.method-badge)');
+        if (badge) eps.push({ method: badge.textContent.trim(), url: urlEl ? urlEl.textContent.trim() : '' });
       });
     }
 
-    if (!eps.length) return;
-
-    // Build fetch snippet map from the hidden fetch-block
+    // Also scrape fetch snippets
     var snippetMap = {};
     var fsBlock = document.getElementById('output-fetch-block');
     if (fsBlock) {
-      var allSnippets = fsBlock.querySelectorAll('.fetch-snippet, pre, code');
-      allSnippets.forEach(function(s) {
+      fsBlock.querySelectorAll('.fetch-snippet, pre, code').forEach(function(s) {
         var txt = s.textContent || '';
         ['GET','POST','PUT','DELETE'].forEach(function(m) {
-          if (!snippetMap[m] && (txt.includes("'" + m + "'") || txt.includes('"' + m + '"') || txt.includes('method: "' + m + '"'))) {
+          if (!snippetMap[m] && (txt.includes("'"+m+"'") || txt.includes('"'+m+'"') || txt.includes('method: "'+m+'"'))) {
             snippetMap[m] = s.innerHTML || txt;
           }
         });
-        if (!snippetMap['GET'] && txt.includes('fetch(') && !txt.includes('method')) {
-          snippetMap['GET'] = s.innerHTML || txt;
-        }
+        if (!snippetMap['GET'] && txt.includes('fetch(') && !txt.includes('method')) snippetMap['GET'] = s.innerHTML || txt;
       });
     }
 
-    // Render clean collapsible ep-cards
-    epList.innerHTML = eps.map(function(ep, i) {
-      var snip = snippetMap[ep.method] || '';
-      var bodyHtml = snip
-        ? '<div class="ep-snippet">' + snip + '</div>'
-        : '<div style="font-family:var(--m);font-size:.65rem;color:var(--txt2);padding:4px 0;">' + (ep.url || '—') + '</div>';
-      return [
-        '<div class="ep-card ep-' + ep.method + '" id="epc-' + i + '">',
-          '<div class="ep-card-head" onclick="toggleEpCard(' + i + ')">',
-            '<span class="method-badge method-' + ep.method + '">' + ep.method + '</span>',
-            '<span class="ep-card-url">' + (ep.url || '') + '</span>',
-            '<span class="ep-toggle">▾</span>',
-          '</div>',
-          '<div class="ep-card-body" id="epb-' + i + '">' + bodyHtml + '</div>',
-        '</div>'
-      ].join('');
-    }).join('');
+    // Fill each card
+    ['GET','POST','PUT','DELETE'].forEach(function(m) {
+      var el = document.getElementById('oc-' + m.toLowerCase() + '-content');
+      if (!el) return;
+      var ep = eps.find(function(e){ return e.method === m; });
+      var url = ep ? ep.url : '';
+      var snip = snippetMap[m] || '';
+      el.innerHTML =
+        (url ? '<div class="field-lbl" style="margin-bottom:6px;">'+url+'</div>' : '') +
+        (snip
+          ? '<div class="ep-snippet" style="font-size:.63rem;line-height:1.75;">' + snip + '</div>'
+          : '<div class="logs-empty">No snippet available.</div>');
+    });
   }
-
-  window.toggleEpCard = function(i) {
-    var body = document.getElementById('epb-' + i);
-    var card = document.getElementById('epc-' + i);
-    if (!body || !card) return;
-    var open = body.classList.contains('open');
-    body.classList.toggle('open', !open);
-    card.classList.toggle('expanded', !open);
-  };
 
   /* ─── 4. Patch log row renderer ─── */
   function patchLogRenderer() {
