@@ -569,16 +569,16 @@
       <!-- Placeholder shown before any resources are added -->
       <div id="seed-placeholder" class="seed-placeholder">
         <span class="seed-icon">🌱</span>
-        Add resources &amp; generate the API<br>to seed initial records here.
+        Add resources in Card 2,<br>then seed initial records here.
       </div>
 
-      <!-- Seed content injected here after generate (id kept for script.js compat) -->
-      <div id="resource-sections" class="hidden"></div>
+      <!-- Seed content injected by script.js after resources added -->
+      <div id="resource-sections"></div>
 
       <div id="step2-error" class="error-msg hidden"></div>
 
-      <!-- Submit / back buttons (shown post-resource-add) -->
-      <div id="seed-action-row" class="hidden" style="display:flex;gap:8px;margin-top:10px;">
+      <!-- Always-visible action buttons -->
+      <div style="display:flex;gap:8px;margin-top:12px;">
         <button class="btn-ghost" onclick="goBackToStep1()">&#8592; Back</button>
         <button class="btn-primary" id="submit-btn" onclick="submitCreate()" style="flex:1;margin:0;">Generate Mock API</button>
       </div>
@@ -625,24 +625,16 @@
 
 window.addEventListener('load', function() {
 
-  /* ─── 1. Wire up seed-records card to show when resources exist ─── */
-  function syncSeedCard() {
-    var sections  = document.getElementById('resource-sections');
+  /* ─── 1. Hide placeholder when resource-sections has content ─── */
+  function syncSeedPlaceholder() {
+    var sections    = document.getElementById('resource-sections');
     var placeholder = document.getElementById('seed-placeholder');
-    var actionRow = document.getElementById('seed-action-row');
-    if (!sections) return;
-    var hasContent = sections.children.length > 0;
-    placeholder.classList.toggle('hidden', hasContent);
-    sections.classList.toggle('hidden', !hasContent);
-    if (actionRow) actionRow.style.display = hasContent ? 'flex' : 'none';
+    if (!sections || !placeholder) return;
+    placeholder.classList.toggle('hidden', sections.children.length > 0);
   }
-
-  // Observe resource-sections for changes
   var rsec = document.getElementById('resource-sections');
-  if (rsec) {
-    new MutationObserver(syncSeedCard).observe(rsec, { childList: true, subtree: true });
-  }
-  syncSeedCard();
+  if (rsec) new MutationObserver(syncSeedPlaceholder).observe(rsec, { childList: true, subtree: true });
+  syncSeedPlaceholder();
 
   /* ─── 2. Override fillOutputPanel to trigger endpoint re-render ─── */
   var origFillOutputPanel = window.fillOutputPanel;
