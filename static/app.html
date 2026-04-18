@@ -201,9 +201,9 @@
     .divider { height: 1px; background: rgba(0,0,0,0.05); margin: 12px 0; }
 
     /* OUTPUT */
-    .out-lbl { font-family: var(--f); font-size: .56rem; font-weight: 700; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+    .out-lbl { font-family: var(--f); font-size: .56rem; font-weight: 700; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     .out-lbl::before { content: ''; width: 12px; height: 1px; background: var(--purple); }
-    .out-block { margin-bottom: 16px; }
+    .out-block { margin-bottom: 18px; }
     .code-val { font-family: var(--m); font-size: .74rem; color: var(--purple); word-break: break-all; }
     .code-row { display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
     .out-primary { background: rgba(156,141,212,.06); border: 1px solid rgba(156,141,212,.15); border-radius: 10px; padding: 13px; }
@@ -212,17 +212,55 @@
     .schema-chips { display: flex; flex-wrap: wrap; gap: 4px; }
     .schema-chip { background: rgba(156,141,212,.08); border: 1px solid rgba(156,141,212,.18); border-radius: 5px; padding: 2px 8px; font-family: var(--m); font-size: .64rem; color: var(--purple); }
     .chip-type { color: var(--txt2); margin-left: 3px; }
-    .ep-list { display: flex; flex-direction: column; gap: 4px; }
-    .ep-row { display: flex; align-items: center; gap: 8px; background: #F1F3F5; border-radius: 8px; padding: 7px 11px; font-family: var(--m); font-size: .7rem; transition: all .2s; }
-    .ep-row:hover { background: #e8ecf0; }
-    .method-badge { font-size: .58rem; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
-    .method-GET    { color: #059669; background: rgba(5,150,105,.1); }
-    .method-POST   { color: #2563eb; background: rgba(37,99,235,.1); }
-    .method-PUT    { color: #ea580c; background: rgba(234,88,12,.1); }
-    .method-DELETE { color: var(--red); background: rgba(231,122,115,.1); }
-    .prev-route { background: #F1F3F5; border-radius: 9px; padding: 11px 14px; position: relative; overflow: hidden; }
-    .prev-route::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--purple); border-radius: 3px 0 0 3px; }
-    .prev-route-lbl { font-family: var(--m); font-size: .52rem; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+    #output-mode-badge { font-family: var(--m); font-size: .58rem; font-weight: 700; letter-spacing: .06em; }
+
+    /* ENDPOINT CARDS — one per method */
+    .ep-list { display: flex; flex-direction: column; gap: 8px; }
+    .ep-card {
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid rgba(0,0,0,.06);
+      transition: box-shadow .2s;
+    }
+    .ep-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.07); }
+    .ep-card-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 13px; cursor: pointer; user-select: none;
+    }
+    .ep-card-head:active { opacity: .85; }
+    .ep-card-body {
+      border-top: 1px solid rgba(0,0,0,.05);
+      padding: 10px 13px;
+      background: #fff;
+      display: none;
+      animation: stepIn .2s ease;
+    }
+    .ep-card-body.open { display: block; }
+    .ep-card-url { font-family: var(--m); font-size: .69rem; color: var(--txt); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ep-card-desc { font-size: .66rem; color: var(--txt2); margin-left: auto; white-space: nowrap; }
+    .ep-toggle { font-size: .6rem; color: var(--txt2); margin-left: 6px; transition: transform .2s; }
+    .ep-card.expanded .ep-toggle { transform: rotate(180deg); }
+
+    /* method colour themes */
+    .ep-GET    { background: rgba(5,150,105,.05); }
+    .ep-POST   { background: rgba(37,99,235,.05); }
+    .ep-PUT    { background: rgba(234,88,12,.05); }
+    .ep-DELETE { background: rgba(231,122,115,.05); }
+    .method-badge { font-size: .58rem; font-weight: 800; letter-spacing: .05em; padding: 3px 9px; border-radius: 5px; flex-shrink: 0; font-family: var(--m); }
+    .method-GET    { color: #059669; background: rgba(5,150,105,.12); }
+    .method-POST   { color: #2563eb; background: rgba(37,99,235,.12); }
+    .method-PUT    { color: #ea580c; background: rgba(234,88,12,.12); }
+    .method-DELETE { color: #e63946; background: rgba(231,122,115,.12); }
+
+    /* inside ep-card-body */
+    .ep-snippet {
+      background: #1e1e2e; border-radius: 7px; padding: 10px 12px;
+      font-family: var(--m); font-size: .66rem; line-height: 1.9;
+      color: #cdd6f4; overflow-x: auto; margin-bottom: 8px;
+    }
+    .mGET { color: #4ade80; } .mPOST { color: #60a5fa; } .mDELETE { color: #f38ba8; } .mPUT { color: #fb923c; }
+    .s2c { color: #4ade80; } .s4c { color: #f38ba8; }
+
+    /* TESTER */
     .select-inp { background: var(--input-bg); border: none; border-radius: 8px; padding: 8px 11px; color: var(--txt); font-family: var(--m); font-size: .72rem; outline: none; cursor: pointer; width: 100%; }
     .tester-row { margin-bottom: 10px; }
     .tester-resp { margin-top: 11px; background: #1e1e2e; border-radius: 9px; padding: 12px; animation: stepIn .3s ease; }
@@ -234,12 +272,32 @@
     .status-5xx { color: var(--red); background: rgba(231,122,115,.12); }
     .resp-body { font-family: var(--m); font-size: .7rem; color: #a6e3a1; line-height: 1.8; white-space: pre-wrap; word-break: break-all; }
     .fetch-snippet { background: #1e1e2e; border-radius: 8px; padding: 12px; font-family: var(--m); font-size: .68rem; line-height: 1.8; color: #cdd6f4; margin-bottom: 8px; overflow-x: auto; }
-    .mGET { color: #4ade80; } .mPOST { color: #60a5fa; } .mDELETE { color: var(--red); } .mPUT { color: #fb923c; }
-    .s2c { color: #4ade80; } .s4c { color: var(--red); }
-    #output-mode-badge { font-family: var(--m); font-size: .58rem; font-weight: 700; letter-spacing: .06em; }
+
+    /* LOGS */
     .logs-empty { font-family: var(--m); font-size: .7rem; color: var(--txt2); }
-    .log-row { display: grid; grid-template-columns: 55px 46px 1fr 55px 46px; gap: 6px; padding: 5px 9px; border-radius: 6px; font-family: var(--m); font-size: .64rem; background: #F1F3F5; margin-bottom: 3px; animation: logIn .3s ease; }
+    .log-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 7px;
+      font-family: var(--m); font-size: .63rem;
+      background: #F8F9FA; border: 1px solid rgba(0,0,0,.05);
+      margin-bottom: 4px; animation: logIn .3s ease;
+    }
+    .log-method { font-weight: 800; min-width: 48px; }
+    .log-route { flex: 1; color: var(--txt2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .log-status { font-weight: 700; min-width: 32px; }
+    .log-time { color: var(--txt2); white-space: nowrap; }
+    .log-GET    .log-method { color: #059669; }
+    .log-POST   .log-method { color: #2563eb; }
+    .log-PUT    .log-method { color: #ea580c; }
+    .log-DELETE .log-method { color: #e63946; }
+    .log-ok  .log-status { color: #059669; }
+    .log-err .log-status { color: #e63946; }
     @keyframes logIn { from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)} }
+
+    /* prev-route kept for compat */
+    .prev-route { background: #F1F3F5; border-radius: 9px; padding: 11px 14px; position: relative; overflow: hidden; }
+    .prev-route::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--purple); border-radius: 3px 0 0 3px; }
+    .prev-route-lbl { font-family: var(--m); font-size: .52rem; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
 
     /* FOOTER */
     .footer-bar { background: var(--bg-warm); border-top: 1px solid rgba(0,0,0,0.06); padding: 12px 24px; margin-top: 24px; }
@@ -528,6 +586,162 @@
 </section>
 
 <script src="script.js"></script>
+<script>
+/* ── MockDock UI Overrides: endpoint cards + logs ── */
+
+// Wait for script.js to finish setting up, then override render functions
+window.addEventListener('load', function() {
+
+  /* ── 1. Override endpoint list rendering ── */
+  var origFillOutputPanel = window.fillOutputPanel;
+  if (typeof window.fillOutputPanel === 'function') {
+    window.fillOutputPanel = function(data) {
+      origFillOutputPanel(data);
+      reRenderEndpoints();
+      patchLogRenderer();
+    };
+  }
+
+  // Also watch for output-panel becoming visible (generated)
+  var opanel = document.getElementById('output-panel');
+  if (opanel) {
+    new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
+        if (m.attributeName === 'class' && !opanel.classList.contains('hidden')) {
+          setTimeout(reRenderEndpoints, 80);
+          setTimeout(patchLogRenderer, 80);
+        }
+      });
+    }).observe(opanel, { attributes: true });
+  }
+
+  function reRenderEndpoints() {
+    var epList = document.getElementById('output-endpoints');
+    if (!epList) return;
+    var rows = epList.querySelectorAll('.ep-row');
+    if (!rows.length) return;
+
+    // collect existing ep-rows data
+    var eps = [];
+    rows.forEach(function(row) {
+      var badge = row.querySelector('.method-badge');
+      var url   = row.querySelector('.ep-card-url') || row.childNodes[1];
+      var desc  = row.querySelector('.ep-card-desc') || row.childNodes[2];
+      var method = badge ? badge.textContent.trim() : '';
+      var urlText = '';
+      var descText = '';
+      row.childNodes.forEach(function(n) {
+        if (n.nodeType === 3) { var t = n.textContent.trim(); if (t) urlText = t; }
+      });
+      if (!urlText) {
+        var spans = row.querySelectorAll('span:not(.method-badge)');
+        if (spans[0]) urlText = spans[0].textContent.trim();
+        if (spans[1]) descText = spans[1].textContent.trim();
+      }
+      // get snippet if sibling fetch-snippet exists
+      var fetchSnippet = '';
+      var fsBlock = document.getElementById('output-fetch-block');
+      if (fsBlock) {
+        var allSnippets = fsBlock.querySelectorAll('.fetch-snippet');
+        allSnippets.forEach(function(s) {
+          if (s.textContent.includes(method)) fetchSnippet = s.innerHTML;
+        });
+      }
+      if (method) eps.push({ method: method, url: urlText, desc: descText });
+    });
+
+    if (!eps.length) return;
+
+    // Also grab fetch snippets by method from output-fetch-block
+    var snippetMap = {};
+    var fsBlock = document.getElementById('output-fetch-block');
+    if (fsBlock) {
+      var allSnippets = fsBlock.querySelectorAll('.fetch-snippet');
+      allSnippets.forEach(function(s) {
+        var txt = s.textContent;
+        ['GET','POST','PUT','DELETE'].forEach(function(m) {
+          if (txt.includes("'" + m + "'") || txt.includes('"' + m + '"') || txt.startsWith(m) || txt.includes('method: "' + m)) {
+            if (!snippetMap[m]) snippetMap[m] = s.innerHTML;
+          }
+        });
+        // GET snippets usually don't have method field
+        if (!snippetMap['GET'] && !txt.includes('method')) snippetMap['GET'] = s.innerHTML;
+      });
+    }
+
+    epList.innerHTML = eps.map(function(ep, i) {
+      var snip = snippetMap[ep.method] || '';
+      var bodyHtml = snip
+        ? '<div class="ep-snippet">' + snip + '</div>'
+        : '<div style="font-family:var(--m);font-size:.65rem;color:var(--txt2);">' + ep.url + '</div>';
+      return '<div class="ep-card ep-' + ep.method + '" id="epc-' + i + '">' +
+        '<div class="ep-card-head" onclick="toggleEpCard(' + i + ')">' +
+          '<span class="method-badge method-' + ep.method + '">' + ep.method + '</span>' +
+          '<span class="ep-card-url">' + ep.url + '</span>' +
+          '<span class="ep-toggle">▾</span>' +
+        '</div>' +
+        '<div class="ep-card-body" id="epb-' + i + '">' + bodyHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+    // hide the now-redundant fetch snippets block
+    if (fsBlock) fsBlock.style.display = 'none';
+  }
+
+  window.toggleEpCard = function(i) {
+    var body = document.getElementById('epb-' + i);
+    var card = document.getElementById('epc-' + i);
+    if (!body || !card) return;
+    var open = body.classList.contains('open');
+    body.classList.toggle('open', !open);
+    card.classList.toggle('expanded', !open);
+  };
+
+  /* ── 2. Patch log row renderer ── */
+  function patchLogRenderer() {
+    var origAppendLog = window.appendLogRow;
+    if (typeof origAppendLog !== 'function') {
+      // override the DOM directly — watch for new .log-row elements
+      var logsTable = document.getElementById('output-logs-table');
+      if (!logsTable) return;
+      new MutationObserver(function() {
+        logsTable.querySelectorAll('.log-row[data-patched!="1"]').forEach(function(row) {
+          row.setAttribute('data-patched','1');
+          redesignLogRow(row);
+        });
+      }).observe(logsTable, { childList: true, subtree: true });
+    }
+  }
+
+  function redesignLogRow(row) {
+    // existing log-row has: method, status_code, route, duration, timestamp (from script.js)
+    var cells = row.querySelectorAll('span, div');
+    if (!cells.length) return;
+    var text = row.textContent.trim();
+    var parts = text.split(/\s+/);
+    if (parts.length < 3) return;
+    var method = parts[0] || '';
+    var status = '';
+    var route  = '';
+    var time   = '';
+    // find status code (3 digit number)
+    parts.forEach(function(p, i) {
+      if (/^\d{3}$/.test(p)) { status = p; route = parts.slice(1, i).join(' '); time = parts.slice(i+1).join(' '); }
+    });
+    if (!status) return;
+    var isOk = parseInt(status) < 400;
+    row.className = 'log-row log-' + method + (isOk ? ' log-ok' : ' log-err');
+    row.innerHTML =
+      '<span class="log-method">' + method + '</span>' +
+      '<span class="log-route">' + route + '</span>' +
+      '<span class="log-status">' + status + '</span>' +
+      '<span class="log-time">' + time + '</span>';
+    row.setAttribute('data-patched','1');
+  }
+
+  patchLogRenderer();
+});
+</script>
 <script>
 (function(){
   var route = document.getElementById('input-route');
