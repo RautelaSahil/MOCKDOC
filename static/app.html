@@ -263,6 +263,13 @@
     .resp-body { font-family: var(--m); font-size: .7rem; color: #a6e3a1; line-height: 1.8; white-space: pre-wrap; word-break: break-all; }
     .fetch-snippet { background: #1e1e2e; border-radius: 8px; padding: 12px; font-family: var(--m); font-size: .68rem; line-height: 1.8; color: #cdd6f4; margin-bottom: 8px; overflow-x: auto; }
 
+    /* SNIPPET TABS (curl / fetch) */
+    .snippet-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+    .stab { background: var(--pill-bg); border: none; color: var(--txt2); padding: 4px 12px; border-radius: 6px; font-family: var(--m); font-size: .62rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .stab.active { background: #1e1e2e; color: #cdd6f4; }
+    .stab-panel { display: none; }
+    .stab-panel.active { display: block; }
+
     /* LOGS */
     .logs-empty { font-family: var(--m); font-size: .7rem; color: var(--txt2); }
     .log-row {
@@ -577,45 +584,49 @@
   </div>
 
   <!-- OUT-D: GET endpoint -->
-  <div class="card out-card ep-GET" id="oc-get">
+  <div class="card out-card" id="oc-get">
     <div class="card-head" style="border-bottom:2px solid rgba(5,150,105,.2);">
-      <div class="card-num" style="background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.3);color:#059669;">GET</div>
+      <div class="card-num" style="background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.3);color:#059669;font-size:.52rem;font-weight:800;width:28px;height:28px;">GET</div>
       <div><div class="card-title">GET</div><div class="card-sub">Fetch all / by ID</div></div>
     </div>
     <div class="card-body">
+      <div id="oc-get-tabs" class="snippet-tabs"></div>
       <div id="oc-get-content"><div class="logs-empty">Waiting for generate…</div></div>
     </div>
   </div>
 
   <!-- OUT-E: POST endpoint -->
-  <div class="card out-card ep-POST" id="oc-post">
+  <div class="card out-card" id="oc-post">
     <div class="card-head" style="border-bottom:2px solid rgba(37,99,235,.2);">
-      <div class="card-num" style="background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.3);color:#2563eb;">POST</div>
+      <div class="card-num" style="background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.3);color:#2563eb;font-size:.52rem;font-weight:800;width:28px;height:28px;">POST</div>
       <div><div class="card-title">POST</div><div class="card-sub">Create a record</div></div>
     </div>
     <div class="card-body">
+      <div id="oc-post-tabs" class="snippet-tabs"></div>
       <div id="oc-post-content"><div class="logs-empty">Waiting for generate…</div></div>
     </div>
   </div>
 
   <!-- OUT-F: PUT endpoint -->
-  <div class="card out-card ep-PUT" id="oc-put">
+  <div class="card out-card" id="oc-put">
     <div class="card-head" style="border-bottom:2px solid rgba(234,88,12,.2);">
-      <div class="card-num" style="background:rgba(234,88,12,.12);border-color:rgba(234,88,12,.3);color:#ea580c;">PUT</div>
+      <div class="card-num" style="background:rgba(234,88,12,.12);border-color:rgba(234,88,12,.3);color:#ea580c;font-size:.52rem;font-weight:800;width:28px;height:28px;">PUT</div>
       <div><div class="card-title">PUT</div><div class="card-sub">Update by ID</div></div>
     </div>
     <div class="card-body">
+      <div id="oc-put-tabs" class="snippet-tabs"></div>
       <div id="oc-put-content"><div class="logs-empty">Waiting for generate…</div></div>
     </div>
   </div>
 
   <!-- OUT-G: DELETE endpoint -->
-  <div class="card out-card ep-DELETE" id="oc-delete">
+  <div class="card out-card" id="oc-delete">
     <div class="card-head" style="border-bottom:2px solid rgba(231,122,115,.2);">
-      <div class="card-num" style="background:rgba(231,122,115,.12);border-color:rgba(231,122,115,.3);color:#e63946;">DEL</div>
+      <div class="card-num" style="background:rgba(231,122,115,.12);border-color:rgba(231,122,115,.3);color:#e63946;font-size:.52rem;font-weight:800;width:28px;height:28px;">DEL</div>
       <div><div class="card-title">DELETE</div><div class="card-sub">Remove by ID</div></div>
     </div>
     <div class="card-body">
+      <div id="oc-delete-tabs" class="snippet-tabs"></div>
       <div id="oc-delete-content"><div class="logs-empty">Waiting for generate…</div></div>
     </div>
   </div>
@@ -751,11 +762,9 @@ window.addEventListener('load', function() {
     var epList = document.getElementById('output-endpoints');
     if (!epList) return;
 
-    // Gather all ep-row / method-badge items script.js injected
     var eps = [];
     var rows = epList.querySelectorAll('.ep-row, [class*="ep-row"]');
     if (!rows.length) {
-      // fallback: find method-badges anywhere inside epList
       epList.querySelectorAll('.method-badge').forEach(function(badge) {
         var method = badge.textContent.trim();
         var parent = badge.parentElement;
@@ -770,35 +779,97 @@ window.addEventListener('load', function() {
       });
     }
 
-    // Also scrape fetch snippets
-    var snippetMap = {};
+    // Scrape fetch snippets from hidden fetch-block
+    var fetchMap = {};
     var fsBlock = document.getElementById('output-fetch-block');
     if (fsBlock) {
       fsBlock.querySelectorAll('.fetch-snippet, pre, code').forEach(function(s) {
         var txt = s.textContent || '';
         ['GET','POST','PUT','DELETE'].forEach(function(m) {
-          if (!snippetMap[m] && (txt.includes("'"+m+"'") || txt.includes('"'+m+'"') || txt.includes('method: "'+m+'"'))) {
-            snippetMap[m] = s.innerHTML || txt;
+          if (!fetchMap[m] && (txt.includes("'"+m+"'") || txt.includes('"'+m+'"') || txt.includes('method: "'+m+'"'))) {
+            fetchMap[m] = txt.trim();
           }
         });
-        if (!snippetMap['GET'] && txt.includes('fetch(') && !txt.includes('method')) snippetMap['GET'] = s.innerHTML || txt;
+        if (!fetchMap['GET'] && txt.includes('fetch(') && !txt.includes('method')) fetchMap['GET'] = txt.trim();
       });
     }
 
-    // Fill each card
+    // Build curl from fetch snippets or ep url
+    function buildCurl(method, url, fetchTxt) {
+      // try to extract token from fetch snippet
+      var token = '';
+      var tokenMatch = fetchTxt && fetchTxt.match(/Bearer ([a-zA-Z0-9_]+)/);
+      if (tokenMatch) token = tokenMatch[1];
+      var authFlag = token ? ' \\\n  -H "Authorization: Bearer ' + token + '"' : '';
+      var baseUrl = url || '/api/resource';
+
+      if (method === 'GET') {
+        return 'curl -X GET "' + baseUrl + '"' + authFlag + ' \\\n  -H "Content-Type: application/json"';
+      } else if (method === 'POST') {
+        return 'curl -X POST "' + baseUrl + '"' + authFlag + ' \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field": "value"}\'';
+      } else if (method === 'PUT') {
+        return 'curl -X PUT "' + baseUrl + '/<id>"' + authFlag + ' \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field": "updated"}\'';
+      } else if (method === 'DELETE') {
+        return 'curl -X DELETE "' + baseUrl + '/<id>"' + authFlag + ' \\\n  -H "Content-Type: application/json"';
+      }
+      return '';
+    }
+
+    function renderTabbed(method, url, fetchTxt, curlTxt) {
+      var mid = method.toLowerCase();
+      return [
+        '<div class="snippet-tabs" id="stabs-'+mid+'">',
+          '<button class="stab active" onclick="switchTab(\''+mid+'\',\'fetch\')">fetch</button>',
+          '<button class="stab" onclick="switchTab(\''+mid+'\',\'curl\')">curl</button>',
+        '</div>',
+        (url ? '<div style="font-family:var(--m);font-size:.62rem;color:var(--txt2);margin-bottom:6px;">'+url+'</div>' : ''),
+        '<div class="stab-panel active" id="sp-'+mid+'-fetch">',
+          '<div class="ep-snippet" style="font-size:.62rem;line-height:1.75;white-space:pre-wrap;overflow-x:auto;">'+escHtml(fetchTxt || '// No fetch snippet')+'</div>',
+          '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-fetch\')">Copy</button>',
+        '</div>',
+        '<div class="stab-panel" id="sp-'+mid+'-curl">',
+          '<div class="ep-snippet" style="font-size:.62rem;line-height:1.75;white-space:pre-wrap;overflow-x:auto;">'+escHtml(curlTxt)+'</div>',
+          '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-curl\')">Copy</button>',
+        '</div>'
+      ].join('');
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
     ['GET','POST','PUT','DELETE'].forEach(function(m) {
       var el = document.getElementById('oc-' + m.toLowerCase() + '-content');
       if (!el) return;
       var ep = eps.find(function(e){ return e.method === m; });
       var url = ep ? ep.url : '';
-      var snip = snippetMap[m] || '';
-      el.innerHTML =
-        (url ? '<div class="field-lbl" style="margin-bottom:6px;">'+url+'</div>' : '') +
-        (snip
-          ? '<div class="ep-snippet" style="font-size:.63rem;line-height:1.75;">' + snip + '</div>'
-          : '<div class="logs-empty">No snippet available.</div>');
+      var fetchTxt = fetchMap[m] || '';
+      var curlTxt  = buildCurl(m, url, fetchTxt);
+      el.innerHTML = renderTabbed(m, url, fetchTxt, curlTxt);
     });
   }
+
+  window.switchTab = function(method, tab) {
+    ['fetch','curl'].forEach(function(t) {
+      var panel = document.getElementById('sp-'+method+'-'+t);
+      if (panel) panel.classList.toggle('active', t === tab);
+    });
+    var tabs = document.querySelectorAll('#stabs-'+method+' .stab');
+    tabs.forEach(function(btn) {
+      btn.classList.toggle('active', btn.textContent === tab);
+    });
+  };
+
+  window.copyRaw = function(panelId) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    var snippet = panel.querySelector('.ep-snippet');
+    if (!snippet) return;
+    navigator.clipboard.writeText(snippet.textContent).then(function() {
+      var btn = panel.querySelector('.btn-copy');
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy'; }, 1500); }
+    });
+  };
 
   /* ─── 4. Patch log row renderer ─── */
   function patchLogRenderer() {
