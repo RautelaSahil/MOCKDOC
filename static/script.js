@@ -88,7 +88,7 @@ function getSchema() {
       if ('enum' in fieldDef) {
         var enumVals = fieldDef['enum'];
         if (!Array.isArray(enumVals) || enumVals.length === 0 ||
-            !enumVals.every(function (v) { return typeof v === 'string'; })) {
+          !enumVals.every(function (v) { return typeof v === 'string'; })) {
           showStep1Error('field "' + fieldName + '": invalid type definition');
           return null;
         }
@@ -289,14 +289,15 @@ function renderRoutePreview() {
   routePathEl.textContent = routePreview;
 
   var endpoints = [
-    { method: 'GET',    path: basePath,          note: 'list all' },
-    { method: 'GET',    path: basePath + '/:id',  note: 'get one' },
-    { method: 'POST',   path: basePath,          note: 'create' },
-    { method: 'PUT',    path: basePath + '/:id',  note: 'update' },
-    { method: 'DELETE', path: basePath + '/:id',  note: 'delete' }
+    { method: 'GET', path: basePath, note: 'list all' },
+    { method: 'GET', path: basePath + '/:id', note: 'get one' },
+    { method: 'POST', path: basePath, note: 'create' },
+    { method: 'PUT', path: basePath + '/:id', note: 'update' },
+    { method: 'DELETE', path: basePath + '/:id', note: 'delete' }
   ];
 
-  endpointsEl.innerHTML = '';
+  // endpointsEl.innerHTML = '';
+  renderEndpoints(data);   // Call the new clean function
   endpoints.forEach(function (endpoint, index) {
     var item = document.createElement('div');
     item.className = 'endpoint-item';
@@ -549,8 +550,8 @@ function buildStep2() {
     aiRecBtn.id = 'ai-records-btn-' + idx;
     aiRecBtn.style.cssText = 'margin-top:0;font-size:.7rem;padding:5px 12px;';
     aiRecBtn.textContent = '\u2728 Generate with AI';
-    (function(i, resource) {
-      aiRecBtn.onclick = function() { generateRecordsWithAI(i, resource); };
+    (function (i, resource) {
+      aiRecBtn.onclick = function () { generateRecordsWithAI(i, resource); };
     })(idx, res);
     recLabelRow.appendChild(aiRecBtn);
     section.appendChild(recLabelRow);
@@ -626,8 +627,8 @@ function submitCreate() {
       state.namespaceToken = res.data.token || null;
       var newRecent = { slug: state.namespace, token: state.namespaceToken, created_at: new Date().toISOString() };
       var recent = [];
-      try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]'); } catch(e){}
-      recent = recent.filter(function(r) { return r.slug !== state.namespace; });
+      try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]'); } catch (e) { }
+      recent = recent.filter(function (r) { return r.slug !== state.namespace; });
       recent.unshift(newRecent);
       if (recent.length > 5) recent = recent.slice(0, 5);
       localStorage.setItem('mockdock_recent_v1', JSON.stringify(recent));
@@ -664,139 +665,221 @@ function schemaChipLabel(fieldName, fieldDef) {
   return { name: fieldName, type: '?' };
 }
 
-function renderOutput(data) {
-  // Script tag
-  document.getElementById('output-script-tag').textContent = data.interceptor_tag;
+// function renderOutput(data) {
+//   // Script tag
+//   document.getElementById('output-script-tag').textContent = data.interceptor_tag;
 
-  // Schema summary ??? use first resource's schema from state
-  var schemaEl = document.getElementById('output-schema-summary');
-  var schemaToRender = state.resources.length > 0 ? state.resources[0].schema : {};
-  schemaEl.innerHTML = Object.keys(schemaToRender).map(function (fieldName) {
-    var chip = schemaChipLabel(fieldName, schemaToRender[fieldName]);
-    return '<span class="schema-chip">' + escapeHtml(chip.name) +
-           '<span class="chip-type">' + escapeHtml(chip.type) + '</span></span>';
-  }).join('');
+//   // Schema summary ??? use first resource's schema from state
+//   var schemaEl = document.getElementById('output-schema-summary');
+//   var schemaToRender = state.resources.length > 0 ? state.resources[0].schema : {};
+//   schemaEl.innerHTML = Object.keys(schemaToRender).map(function (fieldName) {
+//     var chip = schemaChipLabel(fieldName, schemaToRender[fieldName]);
+//     return '<span class="schema-chip">' + escapeHtml(chip.name) +
+//            '<span class="chip-type">' + escapeHtml(chip.type) + '</span></span>';
+//   }).join('');
 
-  var shareBlock = document.getElementById('output-share-block');
-  var ownerMode = document.getElementById('output-mode-owner');
-  var viewerMode = document.getElementById('output-mode-viewer');
-  var modeBadge = document.getElementById('output-mode-badge');
-  var tokenValue = document.getElementById('output-token-value');
-  var shareUrl = document.getElementById('output-share-url');
-  
-  if (state.endpointData) {
-    shareUrl.textContent = window.location.origin + '/api/namespace/' + state.endpointData.namespace;
-    
-    if (state.namespaceToken) {
-      modeBadge.textContent = 'Owner Mode (Full Access)';
-      modeBadge.style.color = 'var(--acc2)';
-      modeBadge.style.background = 'rgba(16,185,129,0.15)';
-      modeBadge.style.border = '1px solid rgba(16,185,129,0.3)';
-      
-      tokenValue.textContent = state.namespaceToken;
-      ownerMode.classList.remove('hidden');
-      viewerMode.classList.add('hidden');
-    } else {
-      modeBadge.textContent = 'Viewer Mode (Read Only)';
-      modeBadge.style.color = 'var(--text)';
-      modeBadge.style.background = 'rgba(255,255,255,0.1)';
-      modeBadge.style.border = '1px solid rgba(255,255,255,0.2)';
-      
-      ownerMode.classList.add('hidden');
-      viewerMode.classList.remove('hidden');
-    }
-    document.getElementById('viewer-token-input').value = '';
-    shareBlock.classList.remove('hidden');
-  } else {
-    shareBlock.classList.add('hidden');
-  }
+//   var shareBlock = document.getElementById('output-share-block');
+//   var ownerMode = document.getElementById('output-mode-owner');
+//   var viewerMode = document.getElementById('output-mode-viewer');
+//   var modeBadge = document.getElementById('output-mode-badge');
+//   var tokenValue = document.getElementById('output-token-value');
+//   var shareUrl = document.getElementById('output-share-url');
 
-  // Expiry
-  document.getElementById('output-expiry').textContent = data.expires_at.replace('T', ' ').replace('Z', ' UTC');
+//   if (state.endpointData) {
+//     shareUrl.textContent = window.location.origin + '/api/namespace/' + state.endpointData.namespace;
 
-  // Endpoints + curl commands
-  var endpointsEl = document.getElementById('output-endpoints');
-  endpointsEl.innerHTML = '';
+//     if (state.namespaceToken) {
+//       modeBadge.textContent = 'Owner Mode (Full Access)';
+//       modeBadge.style.color = 'var(--acc2)';
+//       modeBadge.style.background = 'rgba(16,185,129,0.15)';
+//       modeBadge.style.border = '1px solid rgba(16,185,129,0.3)';
 
-  var primaryResource = data.resources && data.resources[0];
+//       tokenValue.textContent = state.namespaceToken;
+//       ownerMode.classList.remove('hidden');
+//       viewerMode.classList.add('hidden');
+//     } else {
+//       modeBadge.textContent = 'Viewer Mode (Read Only)';
+//       modeBadge.style.color = 'var(--text)';
+//       modeBadge.style.background = 'rgba(255,255,255,0.1)';
+//       modeBadge.style.border = '1px solid rgba(255,255,255,0.2)';
+
+//       ownerMode.classList.add('hidden');
+//       viewerMode.classList.remove('hidden');
+//     }
+//     document.getElementById('viewer-token-input').value = '';
+//     shareBlock.classList.remove('hidden');
+//   } else {
+//     shareBlock.classList.add('hidden');
+//   }
+
+//   // Expiry
+//   document.getElementById('output-expiry').textContent = data.expires_at.replace('T', ' ').replace('Z', ' UTC');
+
+//   // Endpoints + curl commands
+//   var endpointsEl = document.getElementById('output-endpoints');
+//   endpointsEl.innerHTML = '';
+
+//   var primaryResource = data.resources && data.resources[0];
+//   if (!primaryResource) return;
+
+//   var baseUrl = window.location.origin;
+//   var endpoints = [
+//     { label: 'GET',    key: 'list',   url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'GET' },
+//     { label: 'POST',   key: 'create', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'POST' },
+//     { label: 'PUT',    key: 'update', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'PUT' },
+//     { label: 'DELETE', key: 'delete', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'DELETE' }
+//   ];
+
+//   // Build example body from first resource schema
+//   var firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
+//   var firstRecord = {};
+//   Object.keys(firstSchema).forEach(function (fn) {
+//     firstRecord[fn] = exampleValueForField(firstSchema[fn]);
+//   });
+
+//   endpoints.forEach(function (ep) {
+//     var item = document.createElement('div');
+//     item.className = 'endpoint-item';
+
+//     // URL row
+//     var urlRow = document.createElement('div');
+//     urlRow.className = 'endpoint-row';
+
+//     var methodBadge = document.createElement('span');
+//     methodBadge.className = 'endpoint-method method-' + ep.method.toLowerCase();
+//     methodBadge.textContent = ep.method;
+
+//     var urlSpan = document.createElement('span');
+//     urlSpan.className = 'endpoint-url';
+//     urlSpan.id = 'ep-url-' + ep.key;
+//     urlSpan.textContent = ep.url;
+
+//     var copyUrl = document.createElement('button');
+//     copyUrl.className = 'btn-copy';
+//     copyUrl.textContent = 'Copy';
+//     copyUrl.onclick = function () { copyTextContent(ep.url, copyUrl); };
+
+//     urlRow.appendChild(methodBadge);
+//     urlRow.appendChild(urlSpan);
+//     urlRow.appendChild(copyUrl);
+//     item.appendChild(urlRow);
+
+//     // Curl row
+//     var curl = buildCurl(ep.method, ep.url, firstRecord, state.auth);
+//     var curlRow = document.createElement('div');
+//     curlRow.className = 'curl-row';
+
+//     var curlCode = document.createElement('code');
+//     curlCode.className = 'curl-code';
+//     curlCode.id = 'curl-' + ep.key;
+//     curlCode.textContent = curl;
+
+//     var copyCurl = document.createElement('button');
+//     copyCurl.className = 'btn-copy';
+//     copyCurl.textContent = 'Copy';
+//     copyCurl.onclick = function () { copyTextContent(curl, copyCurl); };
+
+//     curlRow.appendChild(curlCode);
+//     curlRow.appendChild(copyCurl);
+//     item.appendChild(curlRow);
+//     endpointsEl.appendChild(item);
+//   });
+
+//   // Build inline tester options
+//   buildTester(endpoints, data);
+
+//   // Build fetch snippets
+//   renderFetchSnippets(data, endpoints);
+
+//   // Show output panel
+//   document.getElementById('preview-panel').classList.add('hidden');
+//   var outputPanel = document.getElementById('output-panel');
+//   outputPanel.classList.remove('hidden');
+//   refreshOutputStatus();
+//   startOutputPolling();
+//   outputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+// }
+// Clean & Readable Endpoints Rendering
+function renderEndpoints(data) {
+  const container = document.getElementById('output-endpoints');
+  container.innerHTML = '';
+
+  const baseUrl = window.location.origin;
+  const primaryResource = data.resources && data.resources[0];
   if (!primaryResource) return;
 
-  var baseUrl = window.location.origin;
-  var endpoints = [
-    { label: 'GET',    key: 'list',   url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'GET' },
-    { label: 'POST',   key: 'create', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'POST' },
-    { label: 'PUT',    key: 'update', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'PUT' },
-    { label: 'DELETE', key: 'delete', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'DELETE' }
+  const resourceName = primaryResource.name;
+  const firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
+  const exampleBody = {};
+  Object.keys(firstSchema).forEach(fn => {
+    exampleBody[fn] = exampleValueForField(firstSchema[fn]);
+  });
+
+  const endpoints = [
+    {
+      method: 'GET',
+      path: `/${data.namespace}/${resourceName}`,
+      label: 'List all records',
+      curl: buildCurl('GET', `${baseUrl}/${data.namespace}/${resourceName}`, null, state.auth)
+    },
+    {
+      method: 'GET',
+      path: `/${data.namespace}/${resourceName}/:id`,
+      label: 'Get single record',
+      curl: buildCurl('GET', `${baseUrl}/${data.namespace}/${resourceName}/1`, null, state.auth)
+    },
+    {
+      method: 'POST',
+      path: `/${data.namespace}/${resourceName}`,
+      label: 'Create new record',
+      curl: buildCurl('POST', `${baseUrl}/${data.namespace}/${resourceName}`, exampleBody, state.auth)
+    },
+    {
+      method: 'PUT',
+      path: `/${data.namespace}/${resourceName}/:id`,
+      label: 'Update record',
+      curl: buildCurl('PUT', `${baseUrl}/${data.namespace}/${resourceName}/1`, exampleBody, state.auth)
+    },
+    {
+      method: 'DELETE',
+      path: `/${data.namespace}/${resourceName}/:id`,
+      label: 'Delete record',
+      curl: buildCurl('DELETE', `${baseUrl}/${data.namespace}/${resourceName}/1`, null, state.auth)
+    }
   ];
 
-  // Build example body from first resource schema
-  var firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
-  var firstRecord = {};
-  Object.keys(firstSchema).forEach(function (fn) {
-    firstRecord[fn] = exampleValueForField(firstSchema[fn]);
+  endpoints.forEach(ep => {
+    const card = document.createElement('div');
+    card.className = 'endpoint-card bg-code border border-border rounded-lg overflow-hidden';
+
+    card.innerHTML = `
+      <div class="p-4 border-b border-border flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="endpoint-method method-${ep.method.toLowerCase()} px-3 py-1 text-xs font-bold rounded">
+            ${ep.method}
+          </span>
+          <span class="font-mono text-sm text-text">${ep.path}</span>
+        </div>
+        <span class="text-xs text-muted">${ep.label}</span>
+      </div>
+
+      <div class="p-4">
+        <div class="text-xs uppercase tracking-widest text-muted mb-2">CURL COMMAND</div>
+        <div class="relative">
+          <pre class="curl-code bg-bg p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap text-muted leading-relaxed">${ep.curl}</pre>
+          <button onclick="copyTextContent(this.previousElementSibling.textContent, this)" 
+                  class="btn-copy absolute top-3 right-3">Copy</button>
+        </div>
+      </div>
+
+      <div class="border-t border-border bg-bg px-4 py-3 flex justify-end">
+        <button onclick="resetResourceRecords('${resourceName}', this)" 
+                class="btn-reset-records text-xs">Reset Records</button>
+      </div>
+    `;
+
+    container.appendChild(card);
   });
-
-  endpoints.forEach(function (ep) {
-    var item = document.createElement('div');
-    item.className = 'endpoint-item';
-
-    // URL row
-    var urlRow = document.createElement('div');
-    urlRow.className = 'endpoint-row';
-
-    var methodBadge = document.createElement('span');
-    methodBadge.className = 'endpoint-method method-' + ep.method.toLowerCase();
-    methodBadge.textContent = ep.method;
-
-    var urlSpan = document.createElement('span');
-    urlSpan.className = 'endpoint-url';
-    urlSpan.id = 'ep-url-' + ep.key;
-    urlSpan.textContent = ep.url;
-
-    var copyUrl = document.createElement('button');
-    copyUrl.className = 'btn-copy';
-    copyUrl.textContent = 'Copy';
-    copyUrl.onclick = function () { copyTextContent(ep.url, copyUrl); };
-
-    urlRow.appendChild(methodBadge);
-    urlRow.appendChild(urlSpan);
-    urlRow.appendChild(copyUrl);
-    item.appendChild(urlRow);
-
-    // Curl row
-    var curl = buildCurl(ep.method, ep.url, firstRecord, state.auth);
-    var curlRow = document.createElement('div');
-    curlRow.className = 'curl-row';
-
-    var curlCode = document.createElement('code');
-    curlCode.className = 'curl-code';
-    curlCode.id = 'curl-' + ep.key;
-    curlCode.textContent = curl;
-
-    var copyCurl = document.createElement('button');
-    copyCurl.className = 'btn-copy';
-    copyCurl.textContent = 'Copy';
-    copyCurl.onclick = function () { copyTextContent(curl, copyCurl); };
-
-    curlRow.appendChild(curlCode);
-    curlRow.appendChild(copyCurl);
-    item.appendChild(curlRow);
-    endpointsEl.appendChild(item);
-  });
-
-  // Build inline tester options
-  buildTester(endpoints, data);
-
-  // Build fetch snippets
-  renderFetchSnippets(data, endpoints);
-
-  // Show output panel
-  document.getElementById('preview-panel').classList.add('hidden');
-  var outputPanel = document.getElementById('output-panel');
-  outputPanel.classList.remove('hidden');
-  refreshOutputStatus();
-  startOutputPolling();
-  outputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function startOutputPolling() {
@@ -827,7 +910,7 @@ function fetchNamespaceHealth() {
       if (!res.ok || !Array.isArray(res.data)) return;
       renderHealthData(res.data);
     })
-    .catch(function () {});
+    .catch(function () { });
 }
 
 function fetchNamespaceLogs() {
@@ -838,7 +921,7 @@ function fetchNamespaceLogs() {
       if (!res.ok || !Array.isArray(res.data)) return;
       renderLogsTable(res.data);
     })
-    .catch(function () {});
+    .catch(function () { });
 }
 
 function renderHealthData(healthItems) {
@@ -903,7 +986,7 @@ function resetResourceRecords(resourceName, button) {
     alert('You are in Viewer Mode. Provide the ownership token to modify this API.');
     return;
   }
-  
+
   var baseUrl = window.location.origin;
   var originalText = button.textContent;
   button.disabled = true;
@@ -1183,7 +1266,7 @@ function showTesterResponse(status, data) {
 // ============================================================
 // DRAFT & PERSISTENCE
 // ============================================================
-const persistDraft = debounce(function() {
+const persistDraft = debounce(function () {
   if (state.endpointData) return;
   var step = document.getElementById('step-2').classList.contains('hidden') ? 1 : 2;
   var draft = {
@@ -1208,13 +1291,13 @@ const persistDraft = debounce(function() {
       protected_routes: []
     };
     var inputs = document.querySelectorAll('#protected-routes-list input[type="checkbox"]');
-    inputs.forEach(function(input) {
+    inputs.forEach(function (input) {
       if (input.checked) draft.auth.protected_routes.push(input.value);
     });
   }
 
   if (step === 2) {
-    draft.step2Records = state.resources.map(function(_, idx) {
+    draft.step2Records = state.resources.map(function (_, idx) {
       var el = document.getElementById('records-json-input-' + idx);
       return el ? el.value : '';
     });
@@ -1229,7 +1312,7 @@ function checkPersistenceOnLoad() {
     try {
       var recent = JSON.parse(rawRecent);
       if (recent.length > 0) renderRecentApis(recent);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   var rawDraft = localStorage.getItem('mockdock_draft_v1');
@@ -1237,14 +1320,14 @@ function checkPersistenceOnLoad() {
     try {
       var draft = JSON.parse(rawDraft);
       restoreDraftData(draft);
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
 function restoreDraftData(draft) {
   state.resources = draft.resources || [];
   renderResourceList();
-  
+
   if (state.resources.length > 0) {
     document.getElementById('resource-form-label').textContent = 'Resource ' + (state.resources.length + 1);
   }
@@ -1279,8 +1362,8 @@ function restoreDraftData(draft) {
     buildStep2();
     showStep(2);
     if (draft.step2Records && draft.step2Records.length > 0) {
-      setTimeout(function() {
-        draft.step2Records.forEach(function(val, idx) {
+      setTimeout(function () {
+        draft.step2Records.forEach(function (val, idx) {
           var el = document.getElementById('records-json-input-' + idx);
           if (el && val) el.value = val;
         });
@@ -1296,24 +1379,24 @@ function renderRecentApis(recent) {
     container.classList.add('hidden');
     return;
   }
-  
+
   container.classList.remove('hidden');
   list.innerHTML = '';
-  
-  recent.forEach(function(api) {
+
+  recent.forEach(function (api) {
     var item = document.createElement('div');
     item.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); cursor:pointer;";
-    
+
     var info = document.createElement('div');
     info.innerHTML = '<strong style="color:var(--acc2);font-family:var(--mono);font-size:0.75rem;">' + escapeHtml(api.slug) + '</strong><div style="font-size:0.6rem;color:var(--mut);">' + escapeHtml(timeAgo(api.created_at)) + '</div>';
-    
+
     var btn = document.createElement('button');
     btn.className = "btn-ghost";
     btn.style.padding = "4px 8px";
     btn.textContent = "Open";
-    
-    item.onclick = function() { restoreRecentApi(api); };
-    
+
+    item.onclick = function () { restoreRecentApi(api); };
+
     item.appendChild(info);
     item.appendChild(btn);
     list.appendChild(item);
@@ -1327,8 +1410,8 @@ function clearRecentApis() {
 
 function removeRecentApi(slug) {
   var recent = [];
-  try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1')); } catch(e){}
-  recent = recent.filter(function(r) { return r.slug !== slug; });
+  try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1')); } catch (e) { }
+  recent = recent.filter(function (r) { return r.slug !== slug; });
   localStorage.setItem('mockdock_recent_v1', JSON.stringify(recent));
   renderRecentApis(recent);
 }
@@ -1336,30 +1419,30 @@ function removeRecentApi(slug) {
 function restoreRecentApi(api) {
   state.namespace = api.slug;
   state.namespaceToken = api.token;
-  
+
   fetch('/' + api.slug + '/health')
-    .then(function(res) {
-      if(res.status === 410) {
+    .then(function (res) {
+      if (res.status === 410) {
         alert('This namespace has expired according to the server.');
         removeRecentApi(api.slug);
       } else if (!res.ok) {
         alert('Namespace not found.');
         removeRecentApi(api.slug);
       } else {
-        res.json().then(function(data) {
-            var mockData = {
-              namespace: api.slug,
-              token: api.token,
-              expires_at: "Active (resumed)",
-              interceptor_tag: '<script src="' + window.location.origin + '/interceptor/' + api.slug + '.js"></script>',
-              resources: data.map(function(d) { return { name: d.name, route_path: d.route_path }; })
-            };
-            state.endpointData = mockData;
-            state.auth = null; 
-            renderOutput(mockData);
+        res.json().then(function (data) {
+          var mockData = {
+            namespace: api.slug,
+            token: api.token,
+            expires_at: "Active (resumed)",
+            interceptor_tag: '<script src="' + window.location.origin + '/interceptor/' + api.slug + '.js"></script>',
+            resources: data.map(function (d) { return { name: d.name, route_path: d.route_path }; })
+          };
+          state.endpointData = mockData;
+          state.auth = null;
+          renderOutput(mockData);
         });
       }
-    }).catch(function() {
+    }).catch(function () {
       alert('Network error trying to restore API.');
     });
 }
@@ -1368,17 +1451,17 @@ function manualOpenApi() {
   var slugEl = document.getElementById('manual-slug-input');
   var errorEl = document.getElementById('manual-open-error');
   var slug = slugEl.value.trim();
-  
+
   errorEl.classList.add('hidden');
-  
+
   if (!slug) {
     errorEl.textContent = 'Please enter a namespace slug';
     errorEl.classList.remove('hidden');
     return;
   }
-  
+
   fetch('/api/namespace/' + slug)
-    .then(function(res) {
+    .then(function (res) {
       if (res.status === 404) {
         errorEl.textContent = 'API not found. It may have expired or never existed.';
         errorEl.classList.remove('hidden');
@@ -1391,67 +1474,67 @@ function manualOpenApi() {
       }
       return res.json();
     })
-    .then(function(data) {
-       state.namespace = slug;
-       state.endpointData = data;
-       
-       var loadedToken = null;
-       try {
-           var recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]');
-           var found = recent.find(function(r) { return r.slug === slug; });
-           if (found) loadedToken = found.token;
-       } catch(e) {}
-       
-       state.namespaceToken = loadedToken || null;
-       data.token = state.namespaceToken; 
-       data.expires_at = "Active (read-only mode if no token)"; 
-       if (data.auth) {
-           state.auth = data.auth;
-           document.getElementById('auth-toggle').checked = true;
-           toggleAuth();
-           document.getElementById('input-login-route').value = data.auth.login_route || '';
-           document.getElementById('input-token').value = data.auth.token || '';
-           
-           var container = document.getElementById('protected-routes-list');
-           container.innerHTML = '';
-           if (data.auth.protected_routes) {
-               data.auth.protected_routes.forEach(function(route) {
-                  var label = document.createElement('label');
-                  label.style.display = 'flex';
-                  label.style.alignItems = 'center';
-                  label.style.gap = '8px';
-                  label.style.fontFamily = 'var(--mono)';
-                  label.style.fontSize = '0.8rem';
-                  label.style.color = 'var(--text)';
-                  label.style.marginTop = '4px';
+    .then(function (data) {
+      state.namespace = slug;
+      state.endpointData = data;
 
-                  var cb = document.createElement('input');
-                  cb.type = 'checkbox';
-                  cb.value = route;
-                  cb.checked = true;
-                  cb.id = 'protect-route-cb';
+      var loadedToken = null;
+      try {
+        var recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]');
+        var found = recent.find(function (r) { return r.slug === slug; });
+        if (found) loadedToken = found.token;
+      } catch (e) { }
 
-                  label.appendChild(cb);
-                  label.appendChild(document.createTextNode(route));
-                  container.appendChild(label);
-               });
-           }
-       } else {
-           state.auth = null;
-           var authToggle = document.getElementById('auth-toggle');
-           if (authToggle.checked) {
-               authToggle.checked = false;
-               toggleAuth();
-           }
-           document.getElementById('input-login-route').value = '';
-           document.getElementById('input-token').value = '';
-           document.getElementById('protected-routes-list').innerHTML = '';
-       }
-       renderOutput(data);
-       
-       slugEl.value = '';
+      state.namespaceToken = loadedToken || null;
+      data.token = state.namespaceToken;
+      data.expires_at = "Active (read-only mode if no token)";
+      if (data.auth) {
+        state.auth = data.auth;
+        document.getElementById('auth-toggle').checked = true;
+        toggleAuth();
+        document.getElementById('input-login-route').value = data.auth.login_route || '';
+        document.getElementById('input-token').value = data.auth.token || '';
+
+        var container = document.getElementById('protected-routes-list');
+        container.innerHTML = '';
+        if (data.auth.protected_routes) {
+          data.auth.protected_routes.forEach(function (route) {
+            var label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'center';
+            label.style.gap = '8px';
+            label.style.fontFamily = 'var(--mono)';
+            label.style.fontSize = '0.8rem';
+            label.style.color = 'var(--text)';
+            label.style.marginTop = '4px';
+
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = route;
+            cb.checked = true;
+            cb.id = 'protect-route-cb';
+
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(route));
+            container.appendChild(label);
+          });
+        }
+      } else {
+        state.auth = null;
+        var authToggle = document.getElementById('auth-toggle');
+        if (authToggle.checked) {
+          authToggle.checked = false;
+          toggleAuth();
+        }
+        document.getElementById('input-login-route').value = '';
+        document.getElementById('input-token').value = '';
+        document.getElementById('protected-routes-list').innerHTML = '';
+      }
+      renderOutput(data);
+
+      slugEl.value = '';
     })
-    .catch(function(err) {});
+    .catch(function (err) { });
 }
 
 function unlockOwnerMode() {
@@ -1459,72 +1542,72 @@ function unlockOwnerMode() {
   var errEl = document.getElementById('viewer-token-error');
   var btn = document.getElementById('viewer-unlock-btn');
   var token = tokenEl.value.trim();
-  
+
   errEl.classList.add('hidden');
-  
+
   if (!token) {
     errEl.textContent = 'Please enter a token.';
     errEl.classList.remove('hidden');
     return;
   }
-  
+
   if (!state.endpointData || !state.endpointData.resources || state.endpointData.resources.length === 0) {
-      _finalizeUnlock(token);
-      return;
+    _finalizeUnlock(token);
+    return;
   }
-  
+
   var firstResource = state.endpointData.resources[0].name;
   var url = window.location.origin + '/' + state.namespace + '/' + firstResource;
-  
+
   var originalBtnText = btn.textContent;
   btn.textContent = 'Verifying...';
   btn.disabled = true;
-  
+
   fetch(url, {
-      method: 'POST',
-      headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({})
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({})
   })
-  .then(function(res) {
+    .then(function (res) {
       if (res.status === 401) {
-          return res.json().then(function(data) {
-              if (data.error && data.error.indexOf('namespace') !== -1) {
-                  throw new Error('invalid_token');
-              }
-              _finalizeUnlock(token);
-          }).catch(function() { throw new Error('invalid_token'); });
-      } else {
+        return res.json().then(function (data) {
+          if (data.error && data.error.indexOf('namespace') !== -1) {
+            throw new Error('invalid_token');
+          }
           _finalizeUnlock(token);
-      }
-  })
-  .catch(function(err) {
-      if (err.message === 'invalid_token') {
-          errEl.textContent = 'Invalid ownership token. Please check and try again.';
+        }).catch(function () { throw new Error('invalid_token'); });
       } else {
-          errEl.textContent = 'Network error checking token.';
+        _finalizeUnlock(token);
+      }
+    })
+    .catch(function (err) {
+      if (err.message === 'invalid_token') {
+        errEl.textContent = 'Invalid ownership token. Please check and try again.';
+      } else {
+        errEl.textContent = 'Network error checking token.';
       }
       errEl.classList.remove('hidden');
-  })
-  .finally(function() {
+    })
+    .finally(function () {
       btn.textContent = originalBtnText;
       btn.disabled = false;
-  });
+    });
 }
 
 function _finalizeUnlock(token) {
   state.namespaceToken = token;
-  
+
   if (state.endpointData) {
-      state.endpointData.token = token;
+    state.endpointData.token = token;
   }
-  
+
   var newRecent = { slug: state.namespace, token: token, created_at: new Date().toISOString() };
   var recent = [];
-  try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]'); } catch(e){}
-  recent = recent.filter(function(r) { return r.slug !== state.namespace; });
+  try { recent = JSON.parse(localStorage.getItem('mockdock_recent_v1') || '[]'); } catch (e) { }
+  recent = recent.filter(function (r) { return r.slug !== state.namespace; });
   recent.unshift(newRecent);
   if (recent.length > 5) recent = recent.slice(0, 5);
   localStorage.setItem('mockdock_recent_v1', JSON.stringify(recent));
