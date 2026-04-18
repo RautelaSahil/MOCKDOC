@@ -1,692 +1,762 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MockDock ??? Instant Mock Backend</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#020408;--s:#0a0f1e;--s2:#0f172a;
-  --acc:#6366f1;--acc2:#22d3ee;--grn:#10b981;--pink:#f472b6;--amb:#f59e0b;
-  --txt:#f8fafc;--mut:#475569;--bor:rgba(99,102,241,0.15);
-  --f:'Syne',sans-serif;--m:'JetBrains Mono',monospace;
-}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--txt);font-family:var(--f);overflow-x:hidden;cursor:none}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MockDock — Instant Mock Backend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* cursor */
-#cur{position:fixed;width:8px;height:8px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:transform .15s}
-#cur2{position:fixed;width:30px;height:30px;border:1px solid rgba(99,102,241,.5);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .1s,top .1s}
+    :root {
+      --bg:         #F1F3F5;
+      --bg-warm:    #FAF9F6;
+      --card:       #FFFFFF;
+      --txt:        #212529;
+      --txt2:       #757575;
+      --input-bg:   #E9F2F7;
+      --purple:     #9C8DD4;
+      --purple-btn: #A99DD8;
+      --pill-bg:    #E2E1E6;
+      --red:        #E77A73;
+      --green:      #4ADE80;
+      --shadow:     0 4px 12px rgba(0,0,0,0.05);
+      --bor:        rgba(0,0,0,0.06);
+      --f: 'Inter', sans-serif;
+      --m: 'Fira Code', monospace;
+    }
 
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:300;padding:1.3rem 3.5rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(2,4,8,.9),transparent)}
-.logo{font-size:1.05rem;font-weight:800;letter-spacing:-.03em}.logo b{color:var(--acc)}
-.nr{display:flex;align-items:center;gap:2.2rem}
-.nr a{color:var(--mut);text-decoration:none;font-size:.72rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase;transition:color .2s}
-.nr a:hover{color:var(--txt)}
-.nb{background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--txt);padding:.42rem 1.1rem;border-radius:100px;font-family:var(--f);font-size:.72rem;font-weight:700;cursor:none;transition:all .3s;letter-spacing:.05em;text-transform:uppercase}
-.nb:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3)}
+    html { font-size: 14px; scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--txt); font-family: var(--f); min-height: 100vh; overflow-x: hidden; }
 
-/* ?????????????????????????????? HERO ?????????????????????????????? */
-.hero{position:relative;height:100vh;width:100%;overflow:hidden}
-#hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
-.hero-vig{
-  position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:
-    radial-gradient(ellipse 65% 50% at 50% 50%,transparent 20%,rgba(2,4,8,.55) 100%),
-    linear-gradient(to bottom,rgba(2,4,8,.3) 0%,transparent 12%,transparent 60%,rgba(2,4,8,.98) 100%),
-    linear-gradient(to right,rgba(2,4,8,.7) 0%,transparent 38%,transparent 62%,rgba(2,4,8,.7) 100%);
-}
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 46px; display: flex; align-items: center; padding: 0 32px; gap: 12px;
+      background: rgba(241,243,245,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--bor);
+    }
+    .logo { font-size: .9rem; font-weight: 700; color: var(--txt); text-decoration: none; }
+    .logo-dot { color: var(--red); }
+    .nav-sep { width: 1px; height: 20px; background: var(--bor); }
+    .nav-tag { font-family: var(--m); font-size: .62rem; color: var(--txt2); background: var(--pill-bg); padding: 3px 10px; border-radius: 100px; }
+    .nav-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .nav-link { font-size: .72rem; color: var(--txt2); text-decoration: none; padding: 5px 12px; border-radius: 100px; transition: all .2s; font-weight: 500; }
+    .nav-link:hover { background: var(--pill-bg); color: var(--txt); }
+    .nav-cta {
+      background: var(--purple-btn); color: #fff; border: none;
+      padding: 6px 16px; border-radius: 100px; font-family: var(--f);
+      font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .25s; text-decoration: none;
+    }
+    .nav-cta:hover { background: #8a7bc7; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(156,141,212,.4); }
 
-/* text bottom-left ??? very minimal */
-.htxt{position:absolute;bottom:10%;left:5%;z-index:10;max-width:380px}
-.heye{font-family:var(--m);font-size:.63rem;letter-spacing:.24em;color:var(--acc2);text-transform:uppercase;margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem;opacity:0;animation:fU .7s .5s ease forwards}
-.heye::before{content:'';width:18px;height:1px;background:var(--acc2)}
-.hh1{font-size:clamp(2rem,3.6vw,3.2rem);font-weight:800;line-height:1.02;letter-spacing:-.05em;margin-bottom:.9rem;opacity:0;animation:fU .7s .65s ease forwards}
-.hh1 em{font-style:normal;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.2)}
-.hsub{font-family:var(--m);font-size:.7rem;color:var(--mut);line-height:1.9;max-width:290px;margin-bottom:1.6rem;opacity:0;animation:fU .7s .8s ease forwards;font-weight:300}
-.hbtns{display:flex;gap:.6rem;opacity:0;animation:fU .7s .95s ease forwards}
-.bp{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;padding:.6rem 1.4rem;border-radius:100px;font-family:var(--f);font-weight:700;font-size:.76rem;cursor:none;transition:transform .3s,box-shadow .3s}
-.bp:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(99,102,241,.5)}
-.bg{background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);padding:.6rem 1.4rem;border-radius:100px;font-family:var(--f);font-weight:600;font-size:.76rem;cursor:none;transition:all .3s}
-.bg:hover{color:var(--txt);border-color:rgba(255,255,255,.3)}
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 80px 32px 60px;
+      background: linear-gradient(160deg, #F1F3F5 0%, #EEF0F8 40%, #F7F6F2 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero-bg-grid {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0.4;
+      background-image:
+        linear-gradient(rgba(156,141,212,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(156,141,212,.08) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .hero-eyebrow {
+      font-family: var(--m); font-size: .6rem; color: var(--purple);
+      letter-spacing: .12em; text-transform: uppercase; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+      animation: fadeUp .6s ease both;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after { content: '—'; opacity: .4; }
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 6.5rem); font-weight: 300;
+      color: var(--txt); letter-spacing: -.04em; line-height: 1.0;
+      text-align: center; margin-bottom: 10px;
+      animation: fadeUp .6s .1s ease both;
+    }
+    .hero-title strong { font-weight: 700; }
+    .hero-title-dot { color: var(--red); }
+    .hero-sub {
+      font-family: var(--m); font-size: .72rem; color: var(--txt2);
+      letter-spacing: .04em; text-align: center; margin-bottom: 40px;
+      animation: fadeUp .6s .2s ease both;
+    }
+    .hero-3d {
+      width: 340px; height: 280px; position: relative;
+      animation: fadeUp .6s .25s ease both;
+      margin-bottom: 32px;
+    }
+    #canvas-hero { display: block; width: 100%; height: 100%; }
+    .hero-shadow {
+      position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+      width: 180px; height: 24px;
+      background: radial-gradient(ellipse, rgba(156,141,212,.3) 0%, transparent 70%);
+      filter: blur(8px);
+    }
+    .hero-btns {
+      display: flex; gap: 12px; align-items: center;
+      animation: fadeUp .6s .35s ease both;
+    }
+    .btn-hero {
+      background: var(--purple-btn); color: #fff; border: none;
+      padding: 12px 28px; border-radius: 100px; font-family: var(--f);
+      font-weight: 600; font-size: .82rem; cursor: pointer; transition: all .25s;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-hero:hover { background: #8a7bc7; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(156,141,212,.4); }
+    .btn-hero-ghost {
+      background: transparent; border: 1.5px solid rgba(0,0,0,.12); color: var(--txt2);
+      padding: 11px 24px; border-radius: 100px; font-family: var(--f);
+      font-weight: 500; font-size: .82rem; cursor: pointer; transition: all .25s;
+      text-decoration: none;
+    }
+    .btn-hero-ghost:hover { border-color: var(--purple); color: var(--purple); }
+    .hero-code-pill {
+      margin-top: 36px; font-family: var(--m); font-size: .65rem;
+      color: var(--txt2); background: var(--card); border: 1px solid var(--bor);
+      padding: 8px 18px; border-radius: 100px; letter-spacing: .03em;
+      box-shadow: var(--shadow); animation: fadeUp .6s .45s ease both;
+    }
+    .hero-code-pill span { color: var(--purple); }
 
-/* floating pills top-right */
-.hpills{position:absolute;top:20%;right:4.5%;z-index:10;display:flex;flex-direction:column;gap:.6rem;opacity:0;animation:fL .7s 1s ease forwards}
-.hpill{background:rgba(8,12,22,.65);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:.65rem 1rem}
-.hpv{font-size:1.25rem;font-weight:800;letter-spacing:-.04em}
-.hpl{font-size:.58rem;font-family:var(--m);color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-top:.12rem}
+    /* ── TICKER ── */
+    .ticker-wrap {
+      overflow: hidden; border-top: 1px solid var(--bor); border-bottom: 1px solid var(--bor);
+      background: var(--bg-warm); padding: 10px 0;
+    }
+    .ticker { display: flex; gap: 0; animation: ticker 28s linear infinite; white-space: nowrap; }
+    .ticker-item {
+      font-family: var(--m); font-size: .6rem; color: var(--txt2); letter-spacing: .06em;
+      padding: 0 32px; border-right: 1px solid var(--bor); text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--purple); }
+    @keyframes ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
 
-/* scroll indicator */
-.scroll-ind{position:absolute;bottom:3.5%;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:.3rem;opacity:0;animation:fU .6s 1.3s ease forwards}
-.scl{width:1px;height:34px;background:linear-gradient(to bottom,var(--acc),transparent);animation:scPulse 2s ease-in-out infinite}
-.sct{font-family:var(--m);font-size:.58rem;color:var(--mut);letter-spacing:.18em;text-transform:uppercase}
+    /* ── SECTIONS ── */
+    section { padding: 100px 32px; max-width: 1200px; margin: 0 auto; }
+    .section-eyebrow {
+      font-family: var(--m); font-size: .58rem; color: var(--purple);
+      letter-spacing: .14em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 300;
+      color: var(--txt); letter-spacing: -.03em; line-height: 1.15; margin-bottom: 16px;
+    }
+    .section-sub { font-size: .82rem; color: var(--txt2); line-height: 1.8; max-width: 480px; }
 
-/* ?????? MARQUEE ?????? */
-.mq{border-top:1px solid var(--bor);border-bottom:1px solid var(--bor);overflow:hidden;padding:.8rem 0;background:rgba(2,4,8,.9);position:relative;z-index:5}
-.mq-t{display:flex;gap:2.8rem;animation:mqA 22s linear infinite;white-space:nowrap}
-.mqi{font-family:var(--m);font-size:.68rem;color:var(--mut);flex-shrink:0;display:flex;align-items:center;gap:.5rem}
-.mqi::before{content:'???';color:var(--acc);font-size:.48rem}
+    /* ── HOW IT WORKS ── */
+    .hiw { background: var(--bg); }
+    .hiw-inner { max-width: 1200px; margin: 0 auto; padding: 100px 32px; }
+    .hiw-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: center; margin-top: 60px;
+    }
+    .hiw-steps { display: flex; flex-direction: column; gap: 0; }
+    .hiw-step {
+      display: flex; gap: 20px; padding: 24px 0;
+      border-bottom: 1px solid var(--bor); cursor: pointer;
+      transition: all .2s; position: relative;
+    }
+    .hiw-step:last-child { border-bottom: none; }
+    .hiw-step-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(156,141,212,.12); border: 1.5px solid rgba(156,141,212,.25);
+      color: var(--purple); font-family: var(--m); font-size: .65rem; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; margin-top: 2px;
+      transition: all .3s;
+    }
+    .hiw-step.active .hiw-step-num { background: var(--purple); color: #fff; border-color: var(--purple); }
+    .hiw-step-title { font-size: .88rem; font-weight: 600; color: var(--txt); margin-bottom: 5px; }
+    .hiw-step-desc { font-size: .74rem; color: var(--txt2); line-height: 1.7; }
+    .hiw-step.active .hiw-step-title { color: var(--purple); }
+    .hiw-3d { width: 100%; height: 360px; position: relative; }
+    #canvas-hiw { display: block; width: 100%; height: 100%; }
 
-/* ?????? SECTION ?????? */
-.sec{padding:6rem 5%;position:relative;z-index:5}
-.wrap{max-width:1260px;margin:0 auto}
-.seye{font-family:var(--m);font-size:.62rem;color:var(--acc2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:.7rem;display:flex;align-items:center;gap:.4rem}
-.seye::before{content:'';width:13px;height:1px;background:var(--acc2)}
-.sh{font-size:clamp(1.8rem,3vw,2.9rem);font-weight:800;letter-spacing:-.04em;line-height:1.05}
-.grad{background:linear-gradient(135deg,var(--acc2),var(--acc),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200%;animation:gS 5s ease infinite}
+    /* ── FEATURES ── */
+    .features-wrap { background: linear-gradient(180deg, var(--bg) 0%, var(--bg-warm) 100%); }
+    .features-inner { max-width: 1200px; margin: 0 auto; padding: 100px 32px; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 60px; }
+    .feat-card {
+      background: var(--card); border-radius: 16px; border: 1px solid rgba(0,0,0,.04);
+      box-shadow: var(--shadow); padding: 28px 24px; position: relative; overflow: hidden;
+      transition: all .3s; cursor: default;
+    }
+    .feat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.08); }
+    .feat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--purple), transparent);
+      opacity: 0; transition: opacity .3s;
+    }
+    .feat-card:hover::before { opacity: 1; }
+    .feat-3d { width: 80px; height: 80px; margin-bottom: 18px; }
+    .feat-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(156,141,212,.12); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 1.1rem; }
+    .feat-title { font-size: .88rem; font-weight: 700; color: var(--txt); margin-bottom: 8px; }
+    .feat-desc { font-size: .74rem; color: var(--txt2); line-height: 1.75; }
+    .feat-tag { display: inline-block; font-family: var(--m); font-size: .54rem; color: var(--purple); background: rgba(156,141,212,.1); border: 1px solid rgba(156,141,212,.2); border-radius: 4px; padding: 2px 7px; margin-top: 14px; }
 
-/* ?????? FEATURES ?????? */
-.fg{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:3rem;border:1px solid var(--bor);border-radius:16px;overflow:hidden}
-.fc{padding:2rem;position:relative;overflow:hidden;transition:background .3s;border-right:1px solid var(--bor);border-bottom:1px solid var(--bor)}
-.fc:nth-child(3n){border-right:none}
-.fc:nth-last-child(-n+3){border-bottom:none}
-.fc::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(99,102,241,.08) 0%,transparent 55%);opacity:0;transition:opacity .3s}
-.fc:hover::before{opacity:1}
-.fc.wide{grid-column:span 2}
-.fi{font-size:1.25rem;margin-bottom:1.1rem;display:block}
-.ft{font-size:.88rem;font-weight:700;margin-bottom:.38rem;letter-spacing:-.02em}
-.fd{font-size:.73rem;color:var(--mut);line-height:1.75;font-family:var(--m);font-weight:300}
+    /* ── CODE PREVIEW ── */
+    .code-section { background: var(--bg-warm); }
+    .code-inner { max-width: 1200px; margin: 0 auto; padding: 100px 32px; }
+    .code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 60px; }
+    .code-block {
+      background: #1e1e2e; border-radius: 16px; padding: 0; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.15); position: relative;
+    }
+    .code-bar {
+      background: #2a2a3e; padding: 12px 18px; display: flex; align-items: center; gap: 7px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .code-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .code-dot.r { background: #E77A73; }
+    .code-dot.y { background: #f0c66a; }
+    .code-dot.g { background: #4ADE80; }
+    .code-filename { font-family: var(--m); font-size: .62rem; color: rgba(255,255,255,.3); margin-left: 8px; }
+    .code-body { padding: 20px 22px; font-family: var(--m); font-size: .72rem; line-height: 2; }
+    .c-purple { color: #cba6f7; }
+    .c-blue   { color: #89b4fa; }
+    .c-green  { color: #a6e3a1; }
+    .c-orange { color: #fab387; }
+    .c-red    { color: #f38ba8; }
+    .c-gray   { color: #6c7086; }
+    .c-white  { color: #cdd6f4; }
+    .code-info { display: flex; flex-direction: column; gap: 28px; }
+    .code-feat { display: flex; gap: 16px; }
+    .code-feat-num {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(156,141,212,.12); border: 1px solid rgba(156,141,212,.25);
+      color: var(--purple); font-family: var(--m); font-size: .6rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .code-feat-title { font-size: .82rem; font-weight: 600; color: var(--txt); margin-bottom: 4px; }
+    .code-feat-desc { font-size: .72rem; color: var(--txt2); line-height: 1.7; }
 
-/* ?????? CODE ?????? */
-.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:6%;align-items:center}
-.cbox{background:#0d1117;border:1px solid var(--bor);border-radius:13px;overflow:hidden;font-family:var(--m)}
-.chdr{background:#161b22;padding:.6rem 1rem;display:flex;align-items:center;gap:.42rem;border-bottom:1px solid rgba(255,255,255,.05)}
-.dot{width:8px;height:8px;border-radius:50%}
-.ctab{font-size:.62rem;color:var(--mut);margin-left:.6rem}
-.cbody{padding:1.2rem;font-size:.74rem;line-height:2.1}
-.ln{color:#21262d;margin-right:.9rem;user-select:none;font-size:.64rem}
-.kw{color:#ff7b72}.str{color:#a5d6ff}.fn{color:#d2a8ff}.cm{color:#8b949e;font-style:italic}
-.hl{background:rgba(99,102,241,.1);border-left:2px solid var(--acc);display:block;margin:0 -1.2rem;padding:0 1.2rem 0 calc(1.2rem - 2px)}
-.cb{display:inline-block;width:2px;height:.82em;background:var(--acc2);animation:blink 1s infinite;vertical-align:middle}
+    /* ── STATS ── */
+    .stats-band { background: var(--card); border-top: 1px solid var(--bor); border-bottom: 1px solid var(--bor); }
+    .stats-inner { max-width: 1200px; margin: 0 auto; padding: 60px 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .stat-item { text-align: center; padding: 20px; border-right: 1px solid var(--bor); }
+    .stat-item:last-child { border-right: none; }
+    .stat-big { font-size: 2.8rem; font-weight: 300; color: var(--txt); letter-spacing: -.04em; line-height: 1; margin-bottom: 6px; }
+    .stat-big span { color: var(--purple); }
+    .stat-label { font-family: var(--m); font-size: .54rem; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; }
 
-.smini{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem;margin-top:2rem}
-.sm{display:flex;gap:.65rem;align-items:flex-start}
-.smn{width:26px;height:26px;border-radius:50%;border:1px solid var(--bor);display:flex;align-items:center;justify-content:center;font-family:var(--m);font-size:.62rem;flex-shrink:0;transition:all .3s;color:var(--mut)}
-.sm:hover .smn{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 0 18px rgba(99,102,241,.4)}
-.smt{font-size:.8rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.18rem}
-.smd{font-size:.68rem;color:var(--mut);line-height:1.6;font-family:var(--m);font-weight:300}
+    /* ── CTA ── */
+    .cta-section {
+      background: linear-gradient(135deg, #EEF0F8 0%, #F7F6F2 100%);
+      border-top: 1px solid var(--bor); position: relative; overflow: hidden;
+    }
+    .cta-inner { max-width: 1200px; margin: 0 auto; padding: 120px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .cta-3d { width: 100%; height: 320px; position: relative; }
+    #canvas-cta { display: block; width: 100%; height: 100%; }
+    .cta-text .section-title { font-size: clamp(2rem, 4vw, 3.2rem); }
+    .cta-btns { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
 
-/* ?????? DASHBOARD ??? always visible, no rv class ?????? */
-.dash-wrap{background:var(--s);border:1px solid var(--bor);border-radius:18px;overflow:hidden;margin-top:3rem}
-.dnav{background:var(--s2);padding:.8rem 1.3rem;display:flex;align-items:center;gap:.65rem;border-bottom:1px solid var(--bor)}
-.dtabs{display:flex;gap:.15rem;margin-left:.65rem}
-.dtab{padding:.28rem .8rem;border-radius:6px;font-size:.7rem;font-weight:600;cursor:pointer;transition:all .2s;color:var(--mut)}
-.dtab.on{background:rgba(99,102,241,.13);color:var(--acc)}
-.dtab:hover{color:var(--txt)}
-.ltag{margin-left:auto;display:flex;align-items:center;gap:.32rem;font-family:var(--m);font-size:.62rem;color:var(--mut)}
-.ldot{width:5px;height:5px;border-radius:50%;background:var(--grn);animation:pulse 1.5s infinite}
-.dbody{display:grid;grid-template-columns:195px 1fr}
-.dside{border-right:1px solid var(--bor);padding:1.2rem}
-.rl{font-family:var(--m);font-size:.58rem;color:var(--mut);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.6rem}
-.ri{padding:.42rem .6rem;border-radius:6px;font-size:.74rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:.12rem;transition:all .2s;color:var(--mut)}
-.ri.on{background:rgba(99,102,241,.1);color:var(--acc);font-weight:600}
-.ri:hover:not(.on){background:rgba(255,255,255,.03);color:var(--txt)}
-.rdot{width:4px;height:4px;border-radius:50%;background:var(--grn);animation:pulse 2s infinite}
-.sbox{margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--bor)}
-.spre{background:#000;border-radius:6px;padding:.5rem .6rem;font-family:var(--m);font-size:.56rem;color:var(--grn);word-break:break-all;line-height:1.6;border:1px solid rgba(255,255,255,.04)}
-.cbtn{margin-top:.35rem;width:100%;background:rgba(99,102,241,.08);border:1px solid var(--bor);color:var(--acc);border-radius:6px;padding:.38rem;font-family:var(--f);font-size:.68rem;font-weight:700;cursor:pointer;transition:all .2s}
-.cbtn:hover{background:rgba(99,102,241,.15)}
-.dmain{padding:1.2rem}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1.2rem}
-.kpi{background:var(--s2);border:1px solid var(--bor);border-radius:9px;padding:.8rem}
-.kl{font-family:var(--m);font-size:.58rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.28rem}
-.kv{font-size:1.35rem;font-weight:800;letter-spacing:-.04em}
-.ks{font-family:var(--m);font-size:.58rem;margin-top:.12rem}
-.bwrap{margin-bottom:1.2rem}
-.bhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;font-family:var(--m);font-size:.6rem;color:var(--mut)}
-.bars{display:flex;gap:4px;align-items:flex-end;height:62px}
-.bar{flex:1;border-radius:2px 2px 0 0;transition:height .4s ease,filter .2s;cursor:pointer}
-.bar:hover{filter:brightness(1.4)}
-.bG{background:linear-gradient(to top,var(--grn),rgba(16,185,129,.3))}
-.bP{background:linear-gradient(to top,#3b82f6,rgba(59,130,246,.3))}
-.bD{background:linear-gradient(to top,#ef4444,rgba(239,68,68,.3))}
-.lbox{background:var(--s2);border:1px solid var(--bor);border-radius:9px;overflow:hidden}
-.lhdr{display:grid;grid-template-columns:65px 54px 1fr 65px 52px;gap:.7rem;padding:.5rem .85rem;border-bottom:1px solid var(--bor);font-family:var(--m);font-size:.58rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
-.lr{display:grid;grid-template-columns:65px 54px 1fr 65px 52px;gap:.7rem;padding:.47rem .85rem;border-bottom:1px solid rgba(255,255,255,.025);font-family:var(--m);font-size:.68rem;transition:background .2s;animation:sI .3s ease}
-.lr:hover{background:rgba(99,102,241,.04)}
-.mGET{color:var(--grn)}.mPOST{color:#60a5fa}.mDELETE{color:#f87171}.mPUT{color:#fb923c}
-.s2c{color:var(--grn)}.s4c{color:#f87171}
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg); border-top: 1px solid var(--bor);
+      padding: 40px 32px; display: flex; align-items: center; justify-content: space-between;
+      max-width: 100%; flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo { font-size: .9rem; font-weight: 700; color: var(--txt); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-link { font-size: .72rem; color: var(--txt2); text-decoration: none; transition: color .2s; }
+    .footer-link:hover { color: var(--purple); }
+    .footer-copy { font-family: var(--m); font-size: .58rem; color: var(--txt2); letter-spacing: .04em; }
 
-/* ?????? AI CHAT ?????? */
-.aigrid{display:grid;grid-template-columns:1fr 1fr;gap:7%;align-items:center}
-.aichat{background:var(--s);border:1px solid var(--bor);border-radius:15px;padding:1.2rem;display:flex;flex-direction:column;gap:.8rem}
-.msg{display:flex;gap:.6rem}
-.av{width:25px;height:25px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:800}
-.avu{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
-.ava{background:linear-gradient(135deg,var(--acc2),var(--grn));color:#000;font-family:var(--m)}
-.bbl{background:var(--s2);border:1px solid var(--bor);border-radius:8px;padding:.6rem .8rem;font-size:.72rem;line-height:1.75;flex:1;font-family:var(--m);font-weight:300;color:rgba(248,250,252,.72)}
-.bbl.u{background:rgba(99,102,241,.07);border-color:rgba(99,102,241,.18)}
-.spx{background:#000;border-radius:6px;padding:.6rem .7rem;font-family:var(--m);font-size:.65rem;margin-top:.38rem;line-height:1.9;border:1px solid rgba(255,255,255,.05)}
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
 
-/* ?????? TERMINAL ?????? */
-.term{background:#000;border:1px solid var(--bor);border-radius:13px;overflow:hidden;max-width:820px;margin:2.5rem auto 0;box-shadow:0 30px 70px rgba(0,0,0,.7)}
-.ttop{background:#111;padding:.6rem 1rem;display:flex;gap:.42rem;border-bottom:1px solid rgba(255,255,255,.05)}
-.tbody{padding:1.2rem;font-family:var(--m);font-size:.74rem;line-height:2.1}
-.tp{color:var(--grn)}.tc{color:var(--txt)}.to{color:var(--mut)}.ts{color:var(--grn)}.ta{color:var(--acc2)}
-
-/* ?????? CTA ?????? */
-.cta{padding:9rem 5%;text-align:center;position:relative;z-index:5}
-.cta-orb{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,.08) 0%,transparent 70%);pointer-events:none}
-.ctah{font-size:clamp(2rem,4.2vw,4.8rem);font-weight:800;letter-spacing:-.05em;line-height:.95;margin-bottom:1.2rem}
-.ctas{font-family:var(--m);font-size:.75rem;color:var(--mut);margin-bottom:2.5rem;font-weight:300}
-
-footer{padding:1.7rem 5%;border-top:1px solid var(--bor);display:flex;justify-content:space-between;align-items:center;position:relative;z-index:5}
-.fl{font-weight:800;font-size:.92rem;letter-spacing:-.03em}
-.fn2{font-family:var(--m);font-size:.6rem;color:var(--mut)}
-
-/* reveal ??? but NOT on dashboard */
-.rv{opacity:0;transform:translateY(26px);transition:opacity .65s,transform .65s}
-.rv.vis{opacity:1;transform:translateY(0)}
-
-@keyframes fU{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fL{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-@keyframes mqA{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-@keyframes gS{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(16,185,129,0)}}
-@keyframes scPulse{0%{opacity:1}100%{opacity:0;transform:scaleY(0);transform-origin:top}}
-@keyframes sI{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
-@keyframes fp{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-</style>
+    /* ── FLOATING ORBS bg decoration ── */
+    .orb {
+      position: absolute; border-radius: 50%; pointer-events: none;
+      background: radial-gradient(circle, rgba(156,141,212,.13) 0%, transparent 70%);
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    @keyframes orbFloat {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%      { transform: translateY(-20px) scale(1.05); }
+    }
+  </style>
 </head>
 <body>
 
-<div id="cur"></div>
-<div id="cur2"></div>
-
+<!-- NAV -->
 <nav>
-  <div class="logo">Mock<b>Dock</b></div>
-  <div class="nr">
-    <a href="#features">Features</a>
-    <a href="#dashboard">Dashboard</a>
-    <a href="#ai">AI Tools</a>
-    <button class="nb" onclick="window.location.href='/app'">Launch app</button>
+  <a href="#" class="logo">MockDock<span class="logo-dot">.</span></a>
+  <div class="nav-sep"></div>
+  <span class="nav-tag">v2.0 beta</span>
+  <div class="nav-right">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#code" class="nav-link">Docs</a>
+    <a href="app_final.html" class="nav-cta">Try Now →</a>
   </div>
 </nav>
 
-<!--  HERO with Three.js 3D objects  -->
-<section class="hero">
-  <canvas id="hero-canvas"></canvas>
-  <div class="hero-vig"></div>
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="orb" style="width:500px;height:500px;top:-100px;right:-150px;animation-delay:-3s;"></div>
+  <div class="orb" style="width:300px;height:300px;bottom:80px;left:-80px;animation-delay:-6s;animation-duration:11s;"></div>
 
-  <div class="htxt">
-    <div class="heye">Instant mock backend</div>
-    <h1 class="hh1">Zero code<br>change.<br><em>Ship now.</em></h1>
-    <p class="hsub">One script tag. Your fetch() calls return real data. No backend needed.</p>
-    <div class="hbtns">
-      <button class="bp" onclick="window.location.href='/app'">Launch App </button>
-      <button class="bg" onclick="window.open('https://github.com/RautelaSahil/MOCKDOC','_blank')">GitHub </button>
+  <div class="hero-eyebrow">Mock Backend Builder</div>
+  <div class="hero-title">Build APIs in<br><strong>seconds</strong><span class="hero-title-dot">.</span></div>
+  <div class="hero-sub">// Define schema — Generate endpoints — Ship</div>
+
+  <div class="hero-3d">
+    <canvas id="canvas-hero"></canvas>
+    <div class="hero-shadow"></div>
+  </div>
+
+  <div class="hero-btns">
+    <a href="app_final.html" class="btn-hero">⚡ Try Now — It's Free</a>
+    <a href="#how" class="btn-hero-ghost">See how it works</a>
+  </div>
+
+  <div class="hero-code-pill">
+    <span>POST</span> /api/users → 201 Created &nbsp;·&nbsp; <span>GET</span> /api/products → 200 OK
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <!-- duplicated for seamless loop -->
+    <div class="ticker-item"><span class="ticker-dot"></span>Zero Config</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>REST Endpoints</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>AI Schema Gen</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Auth Support</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Inline API Tester</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Request Logs</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Instant Deploy</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Share Links</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Zero Config</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>REST Endpoints</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>AI Schema Gen</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Auth Support</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Inline API Tester</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Request Logs</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Instant Deploy</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Share Links</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="hiw" id="how">
+  <div class="hiw-inner">
+    <div class="section-eyebrow reveal">— Process</div>
+    <div class="section-title reveal">Three steps to a<br>live mock API</div>
+    <div class="hiw-grid">
+      <div class="hiw-steps reveal">
+        <div class="hiw-step active" data-step="0">
+          <div class="hiw-step-num">01</div>
+          <div>
+            <div class="hiw-step-title">Define your namespace</div>
+            <div class="hiw-step-desc">Pick an API slug and configure auth. Your namespace is live instantly — shareable, editable, version-controlled.</div>
+          </div>
+        </div>
+        <div class="hiw-step" data-step="1">
+          <div class="hiw-step-num">02</div>
+          <div>
+            <div class="hiw-step-title">Add resources & schema</div>
+            <div class="hiw-step-desc">Describe your data model in plain English. Our AI generates the JSON schema and seeds realistic mock records automatically.</div>
+          </div>
+        </div>
+        <div class="hiw-step" data-step="2">
+          <div class="hiw-step-num">03</div>
+          <div>
+            <div class="hiw-step-title">Hit your endpoints</div>
+            <div class="hiw-step-desc">Full CRUD REST endpoints — GET, POST, PUT, DELETE — ready to consume from any frontend, app, or Postman collection.</div>
+          </div>
+        </div>
+      </div>
+      <div class="hiw-3d reveal">
+        <canvas id="canvas-hiw"></canvas>
+      </div>
     </div>
   </div>
-  
-  <div class="hpills">
-    <div class="hpill" style="animation:fp 4s ease-in-out infinite">
-      <div class="hpv" style="color:var(--acc2)" id="hcnt">847</div>
-      <div class="hpl">requests served</div>
+</div>
+
+<!-- STATS -->
+<div class="stats-band">
+  <div class="stats-inner">
+    <div class="stat-item reveal">
+      <div class="stat-big"><span>∞</span></div>
+      <div class="stat-label">Endpoints per API</div>
     </div>
-    <div class="hpill" style="animation:fp 4s 1.3s ease-in-out infinite">
-      <div class="hpv" style="color:var(--grn)">11ms</div>
-      <div class="hpl">avg response</div>
+    <div class="stat-item reveal">
+      <div class="stat-big">0<span>s</span></div>
+      <div class="stat-label">Setup Time</div>
     </div>
-    <div class="hpill" style="animation:fp 4s 2.6s ease-in-out infinite">
-      <div class="hpv" style="color:var(--pink)">AI</div>
-      <div class="hpl">schema + records</div>
+    <div class="stat-item reveal">
+      <div class="stat-big">5<span>+</span></div>
+      <div class="stat-label">HTTP Methods</div>
     </div>
-  </div>
-  <div class="scroll-ind">
-    <div class="scl"></div>
-    <span class="sct">scroll</span>
-  </div>
-</section>
-<!-- MARQUEE -->
-<div class="mq">
-  <div style="display:flex;overflow:hidden">
-    <div class="mq-t">
-      <span class="mqi">Flask</span><span class="mqi">SQLite</span><span class="mqi">Vanilla JS</span><span class="mqi">Groq AI</span><span class="mqi">fetch() Interceptor</span><span class="mqi">CRUD</span><span class="mqi">Auth Mock</span><span class="mqi">JSON Schema</span><span class="mqi">REST API</span><span class="mqi">LLaMA 3.3</span><span class="mqi">Render</span><span class="mqi">CORS</span>
-      <span class="mqi">Flask</span><span class="mqi">SQLite</span><span class="mqi">Vanilla JS</span><span class="mqi">Groq AI</span><span class="mqi">fetch() Interceptor</span><span class="mqi">CRUD</span><span class="mqi">Auth Mock</span><span class="mqi">JSON Schema</span><span class="mqi">REST API</span><span class="mqi">LLaMA 3.3</span><span class="mqi">Render</span><span class="mqi">CORS</span>
+    <div class="stat-item reveal">
+      <div class="stat-big">1<span>click</span></div>
+      <div class="stat-label">Deploy & Share</div>
     </div>
   </div>
 </div>
 
 <!-- FEATURES -->
-<section class="sec" id="features">
-    <div class="wrap">
-      <p class="seye rv">Features</p>
-      <h2 class="sh rv">Built for the gap between<br>frontend and backend.</h2>
-      <div class="fg rv">
-        <div class="fc wide" id="f0">
-          <span class="fi">⚡</span>
-          <div class="ft">fetch() Interceptor</div>
-          <div class="fd">
-            One script tag patches window.fetch at the browser level. Your existing API calls return
-            seeded data with zero changes to your codebase. Remove the tag when your real backend is ready — nothing
-            else changes.
-          </div>
-        </div>
-        <div class="fc" id="f1">
-          <span class="fi">🤖</span>
-          <div class="ft">AI Schema Generation</div>
-          <div class="fd">
-            Describe a resource in plain English. AI returns a typed schema instantly — no manual JSON writing.
-          </div>
-        </div>
-        <div class="fc" id="f2">
-          <span class="fi">📦</span>
-          <div class="ft">AI Record Generation</div>
-          <div class="fd">
-            Generate realistic, contextually accurate seed records from your schema in one click.
-          </div>
-        </div>
-        <div class="fc" id="f3">
-          <span class="fi">🔐</span>
-          <div class="ft">Auth Mock Flow</div>
-          <div class="fd">
-            Fake a full login-protected API. Configure login route, token, and protected routes. Handled automatically.
-          </div>
-        </div>
-        <div class="fc" id="f4">
-          <span class="fi">✔️</span>
-          <div class="ft">Schema Validation</div>
-          <div class="fd">
-            Every POST and PUT validated against your schema. Wrong type, missing field — rejected with a specific
-            error.
-          </div>
-        </div>
-        <div class="fc" id="f5">
-          <span class="fi">📊</span>
-          <div class="ft">Live Request Logs</div>
-          <div class="fd">
-            Real-time activity feed — method, route, status, response time. Auto-polls every 10 seconds.
-          </div>
-        </div>
+<div class="features-wrap" id="features">
+  <div class="features-inner">
+    <div class="section-eyebrow reveal">— Features</div>
+    <div class="section-title reveal">Everything you need<br>to move fast</div>
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">Instant Endpoints</div>
+        <div class="feat-desc">Full REST CRUD routes generated the moment you save a resource. No boilerplate, no config files, no servers to spin up.</div>
+        <div class="feat-tag">GET · POST · PUT · DELETE</div>
       </div>
-    </div>
-  </section>
-
-<!-- CODE -->
-<section class="sec" style="padding-top:0">
-<div class="wrap">
-  <div class="cgrid rv">
-    <div>
-      <p class="seye">How it works</p>
-      <h2 class="sh">One line.<br>No rewrites.</h2>
-      <p style="font-family:var(--m);font-size:.72rem;color:var(--mut);line-height:1.85;margin-top:.85rem;max-width:340px;font-weight:300">Your frontend stays exactly as-is. MockDock intercepts fetch() at the browser level. When your backend is ready, delete the script tag. Done.</p>
-      <div class="smini">
-        <div class="sm"><div class="smn">01</div><div><div class="smt">Namespace</div><div class="smd">Pick a unique slug, checked live as you type.</div></div></div>
-        <div class="sm"><div class="smn">02</div><div><div class="smt">Define & seed</div><div class="smd">Schema + records via AI or manual JSON.</div></div></div>
-        <div class="sm"><div class="smn">03</div><div><div class="smt">Paste tag</div><div class="smd">One line into your HTML before your scripts.</div></div></div>
-        <div class="sm"><div class="smn">04</div><div><div class="smt">Remove & ship</div><div class="smd">Delete tag when real backend is ready.</div></div></div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🤖</div>
+        <div class="feat-title">AI Schema Generator</div>
+        <div class="feat-desc">Describe your data in plain English. MockDock's AI writes the JSON schema and seeds realistic records — names, emails, dates and all.</div>
+        <div class="feat-tag">Powered by Claude</div>
       </div>
-    </div>
-    <div class="cbox">
-      <div class="chdr">
-        <div class="dot" style="background:#ff5f57"></div><div class="dot" style="background:#febc2e"></div><div class="dot" style="background:#28c840"></div>
-        <span class="ctab">index.html</span>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🔐</div>
+        <div class="feat-title">Auth Simulation</div>
+        <div class="feat-desc">Enable token-based auth on any route. Simulate login flows, protected endpoints, and ownership without writing a single line of auth code.</div>
+        <div class="feat-tag">Bearer Token Auth</div>
       </div>
-      <div class="cbody">
-        <div><span class="ln">1</span><span class="cm">&lt;!-- your HTML ??? zero changes --&gt;</span></div>
-        <div><span class="ln">2</span></div>
-        <span class="hl"><span class="ln">3</span><span class="kw">&lt;script</span> <span class="fn">src</span>=<span class="str">"https://mockdock.app/interceptor/myteam.js"</span><span class="kw">&gt;&lt;/script&gt;</span></span>
-        <div><span class="ln">4</span></div>
-        <div><span class="ln">5</span><span class="kw">&lt;script&gt;</span></div>
-        <div><span class="ln">6</span>&nbsp;&nbsp;<span class="fn">fetch</span>(<span class="str">'/api/users'</span>)</div>
-        <div><span class="ln">7</span>&nbsp;&nbsp;&nbsp;&nbsp;.<span class="fn">then</span>(r =&gt; r.<span class="fn">json</span>())</div>
-        <div><span class="ln">8</span>&nbsp;&nbsp;&nbsp;&nbsp;.<span class="fn">then</span>(data =&gt; <span class="fn">render</span>(data))</div>
-        <div><span class="ln">9</span>&nbsp;&nbsp;<span class="cm">// ??? returns your seeded records</span></div>
-        <div><span class="ln">10</span><span class="kw">&lt;/script&gt;</span><span class="cb"></span></div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🧪</div>
+        <div class="feat-title">Inline API Tester</div>
+        <div class="feat-desc">Test every endpoint right inside the dashboard. Send requests, inspect responses, and view live request logs — all without leaving the page.</div>
+        <div class="feat-tag">Live Request Logs</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🔗</div>
+        <div class="feat-title">Shareable APIs</div>
+        <div class="feat-desc">Generate a public share link for your mock API. Hand it to teammates, clients, or QA — anyone can hit the endpoints from anywhere.</div>
+        <div class="feat-tag">Public · Private modes</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">📦</div>
+        <div class="feat-title">Seed & Scaffold</div>
+        <div class="feat-desc">Auto-populate your resources with realistic mock data. Iterate on your schema, re-seed in one click, and never manually create test data again.</div>
+        <div class="feat-tag">Realistic Mock Data</div>
       </div>
     </div>
   </div>
 </div>
-</section>
 
-<!-- DASHBOARD ??? NO rv class, always visible -->
-<section class="sec" id="dashboard" style="background:linear-gradient(to bottom,transparent,rgba(99,102,241,.025),transparent)">
-<div class="wrap">
-  <p class="seye">Live dashboard</p>
-  <h2 class="sh">Every request.<br>Visible in real time.</h2>
-  <div class="dash-wrap">
-    <div class="dnav">
-      <div class="dot" style="background:#ff5f57"></div><div class="dot" style="background:#febc2e"></div><div class="dot" style="background:#28c840"></div>
-      <div class="dtabs">
-        <div class="dtab on" onclick="switchTab(this)">Overview</div>
-        <div class="dtab" onclick="switchTab(this)">Resources</div>
-        <div class="dtab" onclick="switchTab(this)">Logs</div>
-      </div>
-      <div class="ltag"><span class="ldot"></span>team-demo ?? 18h 42m left</div>
-    </div>
-    <div class="dbody">
-      <div class="dside">
-        <div class="rl">Resources</div>
-        <div class="ri on"><span>users</span><span class="rdot"></span></div>
-        <div class="ri" onclick="this.parentElement.querySelectorAll('.ri').forEach(r=>r.classList.remove('on'));this.classList.add('on')"><span>products</span><span style="font-size:.58rem;color:var(--mut)">12</span></div>
-        <div class="ri" onclick="this.parentElement.querySelectorAll('.ri').forEach(r=>r.classList.remove('on'));this.classList.add('on')"><span>orders</span><span style="font-size:.58rem;color:var(--mut)">8</span></div>
-        <div class="ri" onclick="this.parentElement.querySelectorAll('.ri').forEach(r=>r.classList.remove('on'));this.classList.add('on')"><span>analytics</span><span style="font-size:.58rem;color:var(--mut)">5</span></div>
-        <div class="sbox">
-          <div class="rl">Script tag</div>
-          <div class="spre">&lt;script src="mockdock.app /interceptor/team-demo.js"&gt;&lt;/script&gt;</div>
-          <button class="cbtn" onclick="this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+<!-- CODE SECTION -->
+<div class="code-section" id="code">
+  <div class="code-inner">
+    <div class="section-eyebrow reveal">— Developer Experience</div>
+    <div class="section-title reveal">Copy. Paste. Ship.</div>
+    <div class="code-grid">
+      <div class="code-block reveal">
+        <div class="code-bar">
+          <div class="code-dot r"></div>
+          <div class="code-dot y"></div>
+          <div class="code-dot g"></div>
+          <span class="code-filename">fetch-example.js</span>
+        </div>
+        <div class="code-body">
+          <div><span class="c-gray">// Fetch all users from your mock API</span></div>
+          <div><span class="c-purple">const</span> <span class="c-blue">response</span> <span class="c-white">= </span><span class="c-purple">await</span> <span class="c-blue">fetch</span><span class="c-white">(</span></div>
+          <div>&nbsp;&nbsp;<span class="c-green">`https://mockdock.dev/api/<span class="c-orange">my-api</span>/users`</span></div>
+          <div><span class="c-white">);</span></div>
+          <div>&nbsp;</div>
+          <div><span class="c-purple">const</span> <span class="c-blue">users</span> <span class="c-white">= </span><span class="c-purple">await</span> <span class="c-blue">response</span><span class="c-white">.</span><span class="c-blue">json</span><span class="c-white">();</span></div>
+          <div>&nbsp;</div>
+          <div><span class="c-gray">// POST a new record</span></div>
+          <div><span class="c-purple">await</span> <span class="c-blue">fetch</span><span class="c-white">(url, {</span></div>
+          <div>&nbsp;&nbsp;<span class="c-blue">method</span><span class="c-white">: </span><span class="c-green">'POST'</span><span class="c-white">,</span></div>
+          <div>&nbsp;&nbsp;<span class="c-blue">body</span><span class="c-white">: </span><span class="c-blue">JSON</span><span class="c-white">.</span><span class="c-blue">stringify</span><span class="c-white">({ </span><span class="c-orange">name</span><span class="c-white">: </span><span class="c-green">'Alice'</span> <span class="c-white">}),</span></div>
+          <div><span class="c-white">});</span></div>
+          <div>&nbsp;</div>
+          <div><span class="c-gray">// → 201 Created ✓</span></div>
         </div>
       </div>
-      <div class="dmain">
-        <div class="kpis">
-          <div class="kpi"><div class="kl">Total requests</div><div class="kv" id="req-cnt" style="color:var(--acc2)">0</div><div class="ks" style="color:var(--grn)">??? +23/hr</div></div>
-          <div class="kpi"><div class="kl">Avg response</div><div class="kv" style="color:var(--grn)">11ms</div><div class="ks" style="color:var(--mut)">faster than prod</div></div>
-          <div class="kpi"><div class="kl">Success rate</div><div class="kv" style="color:var(--grn)">99.1%</div><div class="ks" style="color:var(--grn)">??? all OK</div></div>
-          <div class="kpi"><div class="kl">Records</div><div class="kv" style="color:var(--pink)">42</div><div class="ks" style="color:var(--mut)">4 resources</div></div>
-        </div>
-        <div class="bwrap">
-          <div class="bhdr">
-            <span>Request volume ??? last 12h</span>
-            <div style="display:flex;gap:.7rem"><span style="color:var(--grn)">??? GET</span><span style="color:#3b82f6">??? POST</span><span style="color:#ef4444">??? DEL</span></div>
+      <div class="code-info reveal">
+        <div class="code-feat">
+          <div class="code-feat-num">01</div>
+          <div>
+            <div class="code-feat-title">Script tag embed</div>
+            <div class="code-feat-desc">Drop a single script tag into any HTML page. MockDock auto-patches fetch calls — no SDK, no config.</div>
           </div>
-          <div class="bars" id="bars"></div>
         </div>
-        <div class="lbox">
-          <div class="lhdr"><span>Method</span><span>Status</span><span>Route</span><span>Time</span><span>Ms</span></div>
-          <div id="log-feed"></div>
+        <div class="code-feat">
+          <div class="code-feat-num">02</div>
+          <div>
+            <div class="code-feat-title">Standard REST responses</div>
+            <div class="code-feat-desc">Every endpoint returns proper HTTP status codes, JSON bodies, and CORS headers out of the box.</div>
+          </div>
+        </div>
+        <div class="code-feat">
+          <div class="code-feat-num">03</div>
+          <div>
+            <div class="code-feat-title">Session-safe records</div>
+            <div class="code-feat-desc">Records persist for your session. Reset, re-seed, or share your state with a token-protected share link.</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <a href="app_final.html" class="btn-hero" style="display:inline-flex;">Start Building →</a>
         </div>
       </div>
     </div>
   </div>
 </div>
-</section>
-
-<!-- AI -->
-<section class="sec" id="ai">
-<div class="wrap">
-  <div class="aigrid">
-    <div class="rv">
-      <p class="seye">AI powered</p>
-      <h2 class="sh" style="font-size:clamp(1.6rem,2.6vw,2.7rem)">Plain English<br>to live API.<br><span class="grad">Instantly.</span></h2>
-      <p style="font-family:var(--m);font-size:.72rem;color:var(--mut);line-height:1.85;margin-top:.85rem;max-width:310px;font-weight:300">Describe your resource. MockDock uses Groq's LLaMA-3.3-70b to generate a typed schema and realistic seed records, then spins up live CRUD endpoints immediately.</p>
-    </div>
-    <div class="aichat rv">
-      <div class="msg"><div class="av avu">R</div><div class="bbl u">Generate a schema for a product with name, price, category, stock, and rating</div></div>
-      <div class="msg"><div class="av ava">AI</div><div class="bbl">Schema for <strong style="color:var(--acc2)">product</strong>:<div class="spx"><span style="color:#c084fc">{</span><br>&nbsp;&nbsp;<span style="color:#a5d6ff">"name"</span>: <span style="color:#34d399">"string"</span>,<br>&nbsp;&nbsp;<span style="color:#a5d6ff">"price"</span>: <span style="color:#34d399">"number"</span>,<br>&nbsp;&nbsp;<span style="color:#a5d6ff">"category"</span>: {<span style="color:#34d399">"enum"</span>: [<span style="color:#fbbf24">"electronics"</span>, <span style="color:#fbbf24">"clothing"</span>]},<br>&nbsp;&nbsp;<span style="color:#a5d6ff">"stock"</span>: <span style="color:#34d399">"integer"</span>,<br>&nbsp;&nbsp;<span style="color:#a5d6ff">"rating"</span>: <span style="color:#34d399">"number"</span><br><span style="color:#c084fc">}</span></div></div></div>
-      <div class="msg"><div class="av avu">R</div><div class="bbl u">Now generate 5 realistic records</div></div>
-      <div class="msg"><div class="av ava">AI</div><div class="bbl"><span style="color:var(--grn)">???</span> 5 records seeded. Endpoint live:<div class="spx" style="margin-top:.38rem"><span style="color:var(--grn)">GET</span> <span style="color:var(--acc2)">/team-demo/products</span><br><span style="color:var(--mut)">??? 5 realistic product records</span></div></div></div>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- TERMINAL -->
-<section class="sec rv" style="padding-top:0">
-<div class="wrap" style="text-align:center">
-  <p class="seye" style="justify-content:center">Quick start</p>
-  <h2 class="sh">30 seconds to local.</h2>
-</div>
-<div class="term" style="max-width:820px;margin:2.5rem auto 0">
-  <div class="ttop"><div class="dot" style="background:#ff5f57"></div><div class="dot" style="background:#febc2e"></div><div class="dot" style="background:#28c840"></div><span style="font-family:var(--m);font-size:.6rem;color:var(--mut);margin-left:.45rem">bash ??? ~/projects</span></div>
-  <div class="tbody">
-    <div><span class="tp">$ </span><span class="tc" id="t1"></span></div>
-    <div id="t2" style="display:none"><span class="to">Cloning into 'MOCKDOC'... done.</span></div>
-    <div id="t3" style="display:none"><span class="tp">$ </span><span class="tc">pip install flask gunicorn</span></div>
-    <div id="t4" style="display:none"><span class="to">Successfully installed flask-3.0.0 gunicorn-21.2.0</span></div>
-    <div id="t5" style="display:none"><span class="tp">$ </span><span class="tc">python app.py</span></div>
-    <div id="t6" style="display:none"><span class="ts"> * Running on </span><span class="ta">http://127.0.0.1:5000</span><span class="cb"></span></div>
-  </div>
-</div>
-</section>
 
 <!-- CTA -->
-<section class="cta">
-  <div class="cta-orb"></div>
-  <h2 class="ctah rv">Stop waiting.<br><span class="grad">Start shipping.</span></h2>
-  <p class="ctas rv">Your mock backend is one script tag away.</p>
-  <div style="display:flex;gap:.65rem;justify-content:center" class="rv">
-    <button class="bp" style="font-size:.82rem;padding:.7rem 1.6rem" onclick="window.location.href='/app'">Launch MockDock</button>
-    <button class="bg" style="font-size:.82rem;padding:.7rem 1.6rem">View on GitHub</button>
+<div class="cta-section">
+  <div class="cta-inner">
+    <div class="cta-text reveal">
+      <div class="section-eyebrow">— Get started</div>
+      <div class="section-title" style="max-width:440px;">Your mock API is<br>one click away<span style="color:var(--red)">.</span></div>
+      <div class="section-sub">No account needed. No credit card. Define a namespace, add resources, and start hitting real endpoints in under 60 seconds.</div>
+      <div class="cta-btns">
+        <a href="app_final.html" class="btn-hero">⚡ Try Now — Free</a>
+        <a href="#features" class="btn-hero-ghost">Learn more</a>
+      </div>
+    </div>
+    <div class="cta-3d reveal">
+      <canvas id="canvas-cta"></canvas>
+    </div>
   </div>
-</section>
+</div>
 
+<!-- FOOTER -->
 <footer>
-  <div class="fl">MockDock</div>
-  <div class="fn2">Built for Watch the Code 2026 ?? Graphic Era Hill University</div>
-  <div class="fn2" style="display:flex;align-items:center;gap:.32rem"><span class="ldot"></span>Live on Render</div>
+  <div class="footer-logo">MockDock<span style="color:var(--red)">.</span></div>
+  <div class="footer-links">
+    <a href="#" class="footer-link">Docs</a>
+    <a href="#features" class="footer-link">Features</a>
+    <a href="#how" class="footer-link">How it works</a>
+    <a href="app_final.html" class="footer-link">App</a>
+  </div>
+  <div class="footer-copy">© 2025 MockDock · Built for developers</div>
 </footer>
 
 <!-- THREE.JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ?????????????????????????????? THREE.JS HERO ??????????????????????????????
-const canvas = document.getElementById('hero-canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000000, 0);
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 8);
-
-// LIGHTS
-const ambLight = new THREE.AmbientLight(0x6366f1, 0.4);
-scene.add(ambLight);
-const pt1 = new THREE.PointLight(0x22d3ee, 3, 20);
-pt1.position.set(4, 4, 4);
-scene.add(pt1);
-const pt2 = new THREE.PointLight(0xf472b6, 2, 20);
-pt2.position.set(-4, -3, 3);
-scene.add(pt2);
-const pt3 = new THREE.PointLight(0x6366f1, 2.5, 18);
-pt3.position.set(0, 5, -2);
-scene.add(pt3);
-const pt4 = new THREE.PointLight(0x10b981, 1.5, 15);
-pt4.position.set(-5, 0, 2);
-scene.add(pt4);
-
-// MATERIALS
-const matInd = new THREE.MeshStandardMaterial({ color: 0x6366f1, metalness: 0.8, roughness: 0.15, emissive: 0x1a1aff, emissiveIntensity: 0.08 });
-const matCy = new THREE.MeshStandardMaterial({ color: 0x22d3ee, metalness: 0.9, roughness: 0.1, emissive: 0x00aaff, emissiveIntensity: 0.1 });
-const matPk = new THREE.MeshStandardMaterial({ color: 0xf472b6, metalness: 0.7, roughness: 0.2, emissive: 0xff0066, emissiveIntensity: 0.06 });
-const matGn = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8, roughness: 0.15, emissive: 0x00ff88, emissiveIntensity: 0.06 });
-const matAmb = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.1, emissive: 0xff8800, emissiveIntensity: 0.08 });
-const matWire = new THREE.MeshStandardMaterial({ color: 0x6366f1, metalness: 0.3, roughness: 0.6, transparent: true, opacity: 0.25, wireframe: true });
-
-const objects = [];
-
-// ?????? OBJECT 1: Large Icosahedron (center-right) ??????
-const ico = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 1), matInd);
-ico.position.set(2.5, 0.5, 0);
-scene.add(ico);
-const icoWire = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45, 1), matWire);
-icoWire.position.copy(ico.position);
-scene.add(icoWire);
-objects.push({ mesh: ico, wire: icoWire, rx: 0.006, ry: 0.009, rz: 0.004, float: { amp: 0.18, spd: 0.7, off: 0 }, baseY: ico.position.y });
-
-// ?????? OBJECT 2: Torus (top-left) ??????
-const tor = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.32, 20, 60), matCy);
-tor.position.set(-3.2, 1.8, -1);
-tor.rotation.x = 0.5;
-scene.add(tor);
-objects.push({ mesh: tor, wire: null, rx: 0.008, ry: 0.012, rz: 0.003, float: { amp: 0.14, spd: 0.55, off: 1.2 }, baseY: tor.position.y });
-
-// ?????? OBJECT 3: Octahedron (bottom-right) ??????
-const oct = new THREE.Mesh(new THREE.OctahedronGeometry(0.85), matPk);
-oct.position.set(3.8, -2.0, -0.5);
-scene.add(oct);
-const octWire = new THREE.Mesh(new THREE.OctahedronGeometry(0.9), matWire);
-octWire.position.copy(oct.position);
-scene.add(octWire);
-objects.push({ mesh: oct, wire: octWire, rx: 0.01, ry: 0.007, rz: 0.008, float: { amp: 0.16, spd: 0.85, off: 2.1 }, baseY: oct.position.y });
-
-// ?????? OBJECT 4: Torus Knot (center-left area) ??????
-const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.7, 0.22, 120, 16, 2, 3), matGn);
-knot.position.set(-2.0, -1.2, 0.5);
-scene.add(knot);
-objects.push({ mesh: knot, wire: null, rx: 0.007, ry: 0.011, rz: 0.005, float: { amp: 0.12, spd: 0.65, off: 3.5 }, baseY: knot.position.y });
-
-// ?????? OBJECT 5: Dodecahedron (far left) ??????
-const dod = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65), matAmb);
-dod.position.set(-4.0, 0.2, -1.5);
-scene.add(dod);
-objects.push({ mesh: dod, wire: null, rx: 0.009, ry: 0.006, rz: 0.007, float: { amp: 0.1, spd: 0.9, off: 0.8 }, baseY: dod.position.y });
-
-// ?????? OBJECT 6: Small icosahedrons cluster ??????
-[[1.2, 2.8, -2], [-1.0, 3.0, -1.5], [0.3, -3.0, -1]].forEach((pos, i) => {
-  const mats = [matCy, matPk, matInd];
-  const sm = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3 + i * 0.05, 0), mats[i]);
-  sm.position.set(...pos);
-  scene.add(sm);
-  objects.push({ mesh: sm, wire: null, rx: 0.012 + i * 0.002, ry: 0.015, rz: 0.008, float: { amp: 0.08, spd: 1.1 + i * 0.2, off: i * 1.5 }, baseY: pos[1] });
-});
-
-// ?????? PARTICLES ??????
-const pGeo = new THREE.BufferGeometry();
-const pCount = 220;
-const pPos = new Float32Array(pCount * 3);
-for (let i = 0; i < pCount * 3; i++) pPos[i] = (Math.random() - 0.5) * 18;
-pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-const pMat = new THREE.PointsMaterial({ size: 0.04, color: 0x6366f1, transparent: true, opacity: 0.6 });
-scene.add(new THREE.Points(pGeo, pMat));
-
-// ?????? MOUSE parallax ??????
-let mouseX = 0, mouseY = 0;
-document.addEventListener('mousemove', e => {
-  mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-  mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
-});
-
-// ?????? RESIZE ??????
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// ?????? ANIMATE ??????
-const clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
-
-  // rotate and float each object
-  objects.forEach(o => {
-    o.mesh.rotation.x += o.rx;
-    o.mesh.rotation.y += o.ry;
-    o.mesh.rotation.z += o.rz;
-    o.mesh.position.y = o.baseY + Math.sin(t * o.float.spd + o.float.off) * o.float.amp;
-    if (o.wire) {
-      o.wire.rotation.copy(o.mesh.rotation);
-      o.wire.position.copy(o.mesh.position);
-    }
-  });
-
-  // subtle camera parallax with mouse
-  camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.04;
-  camera.position.y += (mouseY * 0.4 - camera.position.y) * 0.04;
-
-  // light animation
-  pt1.position.x = Math.sin(t * 0.5) * 5;
-  pt1.position.y = Math.cos(t * 0.4) * 4;
-  pt2.position.x = Math.cos(t * 0.3) * -5;
-  pt2.position.y = Math.sin(t * 0.6) * -3;
-
-  renderer.render(scene, camera);
+// ── Shared helpers ──────────────────────────────────────────────
+function makeRenderer(canvas, w, h) {
+  var r = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  r.setSize(w, h);
+  return r;
 }
-animate();
-
-// ?????????????????????????????? CURSOR ??????????????????????????????
-const cur = document.getElementById('cur'), cur2 = document.getElementById('cur2');
-let mx = 0, my = 0, tx = 0, ty = 0;
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cur.style.left = mx + 'px'; cur.style.top = my + 'px'; });
-(function loop() { tx += (mx - tx) * 0.1; ty += (my - ty) * 0.1; cur2.style.left = tx + 'px'; cur2.style.top = ty + 'px'; requestAnimationFrame(loop); })();
-
-// ?????????????????????????????? FEAT GLOW ??????????????????????????????
-document.querySelectorAll('.fc').forEach(c => {
-  c.addEventListener('mousemove', e => {
-    const r = c.getBoundingClientRect();
-    c.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
-    c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
-  });
-});
-
-// ?????????????????????????????? SCROLL REVEAL (exclude dashboard) ??????????????????????????????
-const rvEls = document.querySelectorAll('.rv');
-const io = new IntersectionObserver(entries => {
-  entries.forEach((e, i) => { if (e.isIntersecting) { e.target.style.transitionDelay = (i * 0.05) + 's'; e.target.classList.add('vis'); } });
-}, { threshold: 0.08 });
-rvEls.forEach(el => io.observe(el));
-
-// ?????????????????????????????? DASHBOARD BARS ??????????????????????????????
-const bEl = document.getElementById('bars');
-const bT = ['G','G','P','G','G','D','G','P','G','D','G','P'];
-[28,44,58,35,70,18,78,46,62,16,88,52].forEach((h, i) => {
-  const b = document.createElement('div');
-  b.className = 'bar b' + bT[i];
-  b.style.height = '0px';
-  bEl.appendChild(b);
-  setTimeout(() => b.style.height = h + 'px', i * 60);
-});
-setInterval(() => document.querySelectorAll('.bar').forEach(b => b.style.height = (Math.random() * 62 + 8) + 'px'), 3000);
-
-// ?????????????????????????????? LOG FEED ??????????????????????????????
-const logs = [
-  { m: 'GET', r: '/team-demo/users', s: 200, ag: '2s', ms: 8 },
-  { m: 'POST', r: '/team-demo/products', s: 201, ag: '5s', ms: 14 },
-  { m: 'GET', r: '/team-demo/orders', s: 200, ag: '11s', ms: 9 },
-  { m: 'DELETE', r: '/team-demo/users/3', s: 200, ag: '18s', ms: 6 },
-  { m: 'PUT', r: '/team-demo/products/7', s: 200, ag: '24s', ms: 11 },
-  { m: 'GET', r: '/team-demo/analytics', s: 200, ag: '30s', ms: 7 },
-];
-const feed = document.getElementById('log-feed'); let li = 0;
-function addLog() {
-  const d = logs[li % logs.length]; li++;
-  const row = document.createElement('div'); row.className = 'lr';
-  row.innerHTML = `<span class="m${d.m}">${d.m}</span><span class="${d.s < 300 ? 's2c' : 's4c'}">${d.s}</span><span style="color:var(--txt)">${d.r}</span><span style="color:var(--mut)">${d.ag} ago</span><span style="color:var(--acc2)">${d.ms}ms</span>`;
-  feed.insertBefore(row, feed.firstChild);
-  if (feed.children.length > 5) feed.removeChild(feed.lastChild);
+function makeScene() {
+  var s = new THREE.Scene();
+  s.add(new THREE.AmbientLight(0xffffff, 0.45));
+  var d = new THREE.DirectionalLight(0xffffff, 1.1); d.position.set(4, 7, 5); s.add(d);
+  var p = new THREE.PointLight(0x9C8DD4, 2.2, 14); p.position.set(-3, 3, 4); s.add(p);
+  var r = new THREE.PointLight(0xE2D9FF, 0.9, 10); r.position.set(3, -2, 3); s.add(r);
+  return s;
 }
-logs.forEach(() => addLog());
-setInterval(addLog, 2600);
+var purpleMat  = function(op) { return new THREE.MeshPhysicalMaterial({ color:0x9C8DD4, metalness:0.12, roughness:0.08, transmission:0.5, thickness:1.2, clearcoat:1, clearcoatRoughness:0.05, transparent:true, opacity: op||0.9 }); };
+var wireMat    = function() { return new THREE.MeshBasicMaterial({ color:0xC4B8F0, wireframe:true, transparent:true, opacity:0.16 }); };
+var ringMatFn  = function() { return new THREE.MeshPhysicalMaterial({ color:0xB8ACEC, metalness:0.7, roughness:0.1, transparent:true, opacity:0.65 }); };
+var dotMatFn   = function() { return new THREE.MeshPhysicalMaterial({ color:0xE8E0FF, metalness:0.6, roughness:0.1 }); };
 
-// ?????????????????????????????? COUNTER ??????????????????????????????
-function ac(el, target) {
-  let c = 0; const step = target / 60;
-  const tm = setInterval(() => { c = Math.min(c + step, target); el.textContent = Math.floor(c); if (c >= target) clearInterval(tm); }, 16);
-}
-// Start counter immediately for dashboard (always visible)
-const cntEl = document.getElementById('req-cnt');
-const hcntEl = document.getElementById('hcnt');
-ac(cntEl, 847);
-setInterval(() => {
-  const n = parseInt(cntEl.textContent) + (Math.random() > 0.5 ? 1 : 0);
-  cntEl.textContent = n;
-  if (hcntEl) hcntEl.textContent = n;
-}, 4000);
+// ── HERO canvas ─────────────────────────────────────────────────
+(function heroScene() {
+  var el = document.getElementById('canvas-hero');
+  var W = el.parentElement.offsetWidth || 340;
+  var H = el.parentElement.offsetHeight || 280;
+  el.width = W; el.height = H;
+  var renderer = makeRenderer(el, W, H);
+  var scene = makeScene();
+  var camera = new THREE.PerspectiveCamera(36, W/H, 0.1, 100);
+  camera.position.set(0, 0.3, 5.5);
 
-// ?????????????????????????????? TERMINAL ??????????????????????????????
-let tDone = false;
-new IntersectionObserver(entries => {
-  if (entries[0].isIntersecting && !tDone) {
-    tDone = true;
-    const t1 = document.getElementById('t1'); let i = 0;
-    const cmd = 'git clone https://github.com/RautelaSahil/MOCKDOC.git';
-    const typ = setInterval(() => {
-      t1.textContent += cmd[i++];
-      if (i >= cmd.length) {
-        clearInterval(typ);
-        setTimeout(() => { document.getElementById('t2').style.display = 'block';
-          setTimeout(() => { document.getElementById('t3').style.display = 'block';
-            setTimeout(() => { document.getElementById('t4').style.display = 'block';
-              setTimeout(() => { document.getElementById('t5').style.display = 'block';
-                setTimeout(() => document.getElementById('t6').style.display = 'block', 500);
-              }, 800);}, 900);}, 500);}, 400);
-      }
-    }, 30);
+  var group = new THREE.Group(); scene.add(group);
+
+  // Main icosahedron
+  var mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 1), purpleMat(0.88));
+  group.add(mesh);
+  group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), wireMat()));
+
+  // Two rings at different angles
+  var ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.035, 16, 90), ringMatFn());
+  ring1.rotation.x = Math.PI/2.5; ring1.rotation.z = 0.3; group.add(ring1);
+  var ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.02, 16, 90), new THREE.MeshBasicMaterial({ color:0xC4B8F0, transparent:true, opacity:0.2, wireframe:false }));
+  ring2.rotation.x = Math.PI/3.5; ring2.rotation.y = 0.8; group.add(ring2);
+
+  // Orbiting dots
+  var dot1 = new THREE.Mesh(new THREE.SphereGeometry(0.13,16,16), dotMatFn()); group.add(dot1);
+  var dot2 = new THREE.Mesh(new THREE.SphereGeometry(0.08,16,16), dotMatFn()); group.add(dot2);
+
+  // Small satellite cubes
+  var cubeGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+  var cubeMat = new THREE.MeshPhysicalMaterial({ color:0x9C8DD4, metalness:0.4, roughness:0.2, transparent:true, opacity:0.7 });
+  var cube1 = new THREE.Mesh(cubeGeo, cubeMat); group.add(cube1);
+  var cube2 = new THREE.Mesh(cubeGeo, cubeMat); group.add(cube2);
+
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    group.rotation.y = t * 0.28;
+    group.rotation.x = Math.sin(t * 0.35) * 0.15;
+    group.position.y = Math.sin(t * 0.6) * 0.1;
+    dot1.position.set(Math.cos(t*1.0)*1.75, Math.sin(t*0.8)*0.5, Math.sin(t*1.0)*1.75);
+    dot2.position.set(Math.cos(t*0.7+2)*1.95, Math.sin(t*1.1)*0.3, Math.sin(t*0.7+2)*1.95);
+    cube1.position.set(Math.cos(t*0.9+1)*2.1, Math.sin(t*0.6)*0.6, Math.sin(t*0.9+1)*2.1);
+    cube1.rotation.set(t,t*0.7,0);
+    cube2.position.set(Math.cos(t*0.5+3)*2.3, Math.sin(t*0.9+1)*0.8, Math.sin(t*0.5+3)*2.3);
+    cube2.rotation.set(t*0.8,t,0);
+    renderer.render(scene, camera);
   }
-}, { threshold: 0.3 }).observe(document.querySelector('.term'));
+  animate();
 
-// ?????????????????????????????? DASH TABS ??????????????????????????????
-function switchTab(el) {
-  document.querySelectorAll('.dtab').forEach(t => t.classList.remove('on'));
-  el.classList.add('on');
-}
+  // Mouse parallax
+  document.addEventListener('mousemove', function(e) {
+    var cx = (e.clientX / window.innerWidth  - 0.5) * 0.4;
+    var cy = (e.clientY / window.innerHeight - 0.5) * 0.4;
+    group.rotation.y += (cx - group.rotation.y) * 0.04;
+  });
+})();
+
+// ── HOW IT WORKS canvas ─────────────────────────────────────────
+(function hiwScene() {
+  var el = document.getElementById('canvas-hiw');
+  var W = el.parentElement.offsetWidth || 400;
+  var H = 360;
+  el.width = W; el.height = H;
+  var renderer = makeRenderer(el, W, H);
+  var scene = makeScene();
+  var camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
+  camera.position.set(0, 0, 5);
+
+  var group = new THREE.Group(); scene.add(group);
+
+  // Stack of 3 geometric shapes representing the 3 steps
+  var shapes = [];
+
+  // Step 1: Cube (namespace)
+  var g1 = new THREE.BoxGeometry(1, 1, 1);
+  var m1 = new THREE.Mesh(g1, purpleMat(0.85));
+  m1.position.set(-1.4, 0, 0); group.add(m1);
+  m1.add(new THREE.Mesh(new THREE.BoxGeometry(1.08,1.08,1.08), wireMat()));
+  shapes.push(m1);
+
+  // Step 2: Octahedron (schema)
+  var g2 = new THREE.OctahedronGeometry(0.75, 0);
+  var m2 = new THREE.Mesh(g2, purpleMat(0.85));
+  m2.position.set(0, 0, 0); group.add(m2);
+  m2.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.85,0), wireMat()));
+  shapes.push(m2);
+
+  // Step 3: Icosahedron (endpoints)
+  var g3 = new THREE.IcosahedronGeometry(0.75, 1);
+  var m3 = new THREE.Mesh(g3, purpleMat(0.85));
+  m3.position.set(1.4, 0, 0); group.add(m3);
+  m3.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.85,1), wireMat()));
+  shapes.push(m3);
+
+  // Connecting lines (particles)
+  var pts = [new THREE.Vector3(-1.4,0,0), new THREE.Vector3(0,0,0), new THREE.Vector3(1.4,0,0)];
+  var lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+  var line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color:0x9C8DD4, transparent:true, opacity:0.3 }));
+  group.add(line);
+
+  // Active step highlight
+  var steps = document.querySelectorAll('.hiw-step');
+  var activeStep = 0;
+  steps.forEach(function(el, i) {
+    el.addEventListener('click', function() {
+      steps.forEach(function(s){ s.classList.remove('active'); });
+      el.classList.add('active');
+      activeStep = i;
+    });
+  });
+
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    group.rotation.y = t * 0.2;
+    shapes.forEach(function(s, i) {
+      s.rotation.x = t * (0.3 + i*0.1);
+      s.rotation.z = t * (0.2 + i*0.08);
+      var isActive = i === activeStep;
+      s.scale.setScalar(isActive ? 1.15 + Math.sin(t*2)*0.05 : 1.0);
+      s.material.opacity = isActive ? 1.0 : 0.6;
+    });
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+// ── CTA canvas ──────────────────────────────────────────────────
+(function ctaScene() {
+  var el = document.getElementById('canvas-cta');
+  var W = el.parentElement.offsetWidth || 400;
+  var H = 320;
+  el.width = W; el.height = H;
+  var renderer = makeRenderer(el, W, H);
+  var scene = makeScene();
+  var camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
+  camera.position.set(0, 0, 6);
+
+  var group = new THREE.Group(); scene.add(group);
+
+  // Central torus knot
+  var knot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1, 0.3, 128, 16, 2, 3),
+    new THREE.MeshPhysicalMaterial({ color:0x9C8DD4, metalness:0.1, roughness:0.05, transmission:0.4, thickness:1.5, clearcoat:1, clearcoatRoughness:0.04, transparent:true, opacity:0.85 })
+  );
+  group.add(knot);
+
+  // Outer orbit ring
+  var outerRing = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.025, 12, 100), ringMatFn());
+  outerRing.rotation.x = Math.PI/4; group.add(outerRing);
+
+  // Orbiting small spheres
+  var orbiters = [];
+  for (var i=0; i<4; i++) {
+    var s = new THREE.Mesh(new THREE.SphereGeometry(0.1,12,12), dotMatFn());
+    group.add(s); orbiters.push({ mesh:s, offset: i * Math.PI/2 });
+  }
+
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    group.rotation.y = t * 0.22;
+    group.rotation.x = Math.sin(t*0.3)*0.15;
+    group.position.y = Math.sin(t*0.5)*0.12;
+    knot.rotation.z = t * 0.18;
+    orbiters.forEach(function(o) {
+      o.mesh.position.set(Math.cos(t*0.8 + o.offset)*2.2, Math.sin(t*0.6 + o.offset)*0.5, Math.sin(t*0.8 + o.offset)*2.2);
+    });
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+// ── Scroll reveal ───────────────────────────────────────────────
+(function() {
+  var els = document.querySelectorAll('.reveal');
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e, i) {
+      if (e.isIntersecting) {
+        setTimeout(function() { e.target.classList.add('visible'); }, 60);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  els.forEach(function(el) { io.observe(el); });
+})();
 </script>
 </body>
 </html>
