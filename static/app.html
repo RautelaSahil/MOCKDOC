@@ -69,7 +69,17 @@
     .hero-title { font-size: 2.6rem; font-weight: 300; color: var(--txt); letter-spacing: -.04em; line-height: 1.1; margin-bottom: 10px; }
     .hero-sub { font-family: var(--m); font-size: .65rem; color: var(--txt2); letter-spacing: .03em; }
     .hero-center { display: flex; justify-content: center; align-items: center; height: 150px; }
-    .hero-center spline-viewer { width: 220px; height: 170px; }
+    .spline-wrap {
+      position: relative; width: 220px; height: 170px;
+      display: flex; justify-content: center; align-items: flex-end;
+    }
+    .spline-wrap canvas { background: transparent !important; display: block; }
+    .spline-shadow {
+      position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 18px;
+      background: radial-gradient(ellipse, rgba(156,141,212,0.35) 0%, rgba(156,141,212,0.08) 60%, transparent 100%);
+      border-radius: 50%; z-index: 0; filter: blur(5px);
+    }
     .hero-stats { display: flex; align-items: flex-start; gap: 32px; justify-content: flex-end; padding-top: 8px; }
     .stat-val { font-size: 1.5rem; font-weight: 300; color: var(--txt); letter-spacing: -.03em; line-height: 1; }
     .stat-lbl { font-family: var(--m); font-size: .52rem; color: var(--txt2); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
@@ -89,7 +99,15 @@
     }
     .card-title { font-size: .84rem; font-weight: 600; color: var(--txt); }
     .card-sub { font-size: .68rem; color: var(--txt2); margin-top: 1px; }
-    .card-body { padding: 4px 18px 18px; }
+    .card-body { padding: 4px 18px 18px; overflow-wrap: break-word; word-break: break-word; }
+    .card-body * { max-width: 100%; }
+    .card-body code, .card-body pre, .card-body .code-val { overflow-x: auto; word-break: break-all; white-space: pre-wrap; }
+    .card-body .field-hint { white-space: normal; line-height: 1.5; }
+    .card-body .card-title, .card-body .card-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-body .inp { text-overflow: ellipsis; }
+    .card-body .resource-card-name, .card-body .resource-card-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .card-body .ep-row { overflow: hidden; }
+    .card-body .ep-row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* FIELDS */
     .field { margin-bottom: 13px; }
@@ -282,16 +300,18 @@
 <!-- HERO -->
 <section class="hero">
   <div>
-    <div class="hero-eyebrow">— Nock Backend Builder</div>
-    <div class="hero-title">Pristine Minimalism</div>
+    <div class="hero-eyebrow">— Mock Backend Builder</div>
+    <div class="hero-title">MockDock</div>
     <div class="hero-sub">// Define schema – Generate endpoints – Ship</div>
   </div>
   <div class="hero-center">
-    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
-    <spline-viewer url="https://prod.spline.design/kZDDjO5HmGtN3hjH/scene.splinecode"></spline-viewer>
+    <div class="spline-wrap">
+      <canvas id="hero3d" width="220" height="170" style="display:block;"></canvas>
+      <div class="spline-shadow"></div>
+    </div>
   </div>
   <div class="hero-stats">
-    <div><div class="stat-val">0ms</div><div class="stat-lbl">Setup Time</div></div>
+    <div><div class="stat-val">Quick</div><div class="stat-lbl">Setup Time</div></div>
     <div><div class="stat-val" style="font-size:1.8rem;">∞</div><div class="stat-lbl">Endpoints</div></div>
     <div><div class="stat-val">1click</div><div class="stat-lbl">Deploy</div></div>
   </div>
@@ -524,6 +544,110 @@
 </section>
 
 <script src="script.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  var canvas = document.getElementById('hero3d');
+  if (!canvas || typeof THREE === 'undefined') return;
+
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(220, 170);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(38, 220/170, 0.1, 100);
+  camera.position.set(0, 0.5, 5);
+
+  // Lighting
+  var ambient = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambient);
+
+  var dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  dirLight.position.set(3, 6, 4);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
+
+  var purpleLight = new THREE.PointLight(0x9C8DD4, 1.8, 12);
+  purpleLight.position.set(-2, 2, 3);
+  scene.add(purpleLight);
+
+  var rimLight = new THREE.PointLight(0xE2D9FF, 0.8, 10);
+  rimLight.position.set(2, -1, 2);
+  scene.add(rimLight);
+
+  // Main object — rounded icosahedron group
+  var group = new THREE.Group();
+  scene.add(group);
+
+  // Core sphere
+  var geo = new THREE.IcosahedronGeometry(1, 1);
+  var mat = new THREE.MeshPhysicalMaterial({
+    color: 0x9C8DD4,
+    metalness: 0.15,
+    roughness: 0.08,
+    transmission: 0.55,
+    thickness: 1.2,
+    reflectivity: 0.9,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.05,
+    transparent: true,
+    opacity: 0.88,
+  });
+  var mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+  group.add(mesh);
+
+  // Outer wireframe shell
+  var wireMat = new THREE.MeshBasicMaterial({
+    color: 0xC4B8F0,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.18,
+  });
+  var wireGeo = new THREE.IcosahedronGeometry(1.08, 1);
+  var wireMesh = new THREE.Mesh(wireGeo, wireMat);
+  group.add(wireMesh);
+
+  // Floating ring
+  var ringGeo = new THREE.TorusGeometry(1.42, 0.03, 16, 80);
+  var ringMat = new THREE.MeshPhysicalMaterial({
+    color: 0xB8ACEC,
+    metalness: 0.6,
+    roughness: 0.1,
+    transparent: true,
+    opacity: 0.7,
+  });
+  var ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2.5;
+  ring.rotation.z = 0.3;
+  group.add(ring);
+
+  // Small orbiting sphere
+  var dotGeo = new THREE.SphereGeometry(0.12, 16, 16);
+  var dotMat = new THREE.MeshPhysicalMaterial({ color: 0xE8E0FF, metalness: 0.5, roughness: 0.1 });
+  var dot = new THREE.Mesh(dotGeo, dotMat);
+  group.add(dot);
+
+  // Animation
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    group.rotation.y = t * 0.35;
+    group.rotation.x = Math.sin(t * 0.4) * 0.18;
+    group.position.y = Math.sin(t * 0.7) * 0.08;
+    dot.position.set(
+      Math.cos(t * 1.1) * 1.55,
+      Math.sin(t * 0.9) * 0.4,
+      Math.sin(t * 1.1) * 1.55
+    );
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+</script>
 <script>
 (function(){
   var route = document.getElementById('input-route');
