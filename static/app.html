@@ -1001,6 +1001,459 @@ body::after {
 })();
 </script>
 
-<script src="script.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// MockDock — Full App Logic
+// ══════════════════════════════════════════════════════════════
+
+const BASE = 'https://mockdoc-mxvm.onrender.com';
+
+// ── STATE ─────────────────────────────────────────────────────
+let resources = [];       // [{name, route, schema, auth}]
+let currentNs = '';
+let ownerToken = '';
+let deployedNs = '';
+let recentApis = JSON.parse(localStorage.getItem('md_recent') || '[]');
+
+// ── UTILS ─────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function show(id) { $(id).classList.remove('hidden'); }
+function hide(id) { $(id).classList.add('hidden'); }
+function setErr(id, msg) { $(id).textContent = msg; show(id); }
+function clearErr(id) { $(id).textContent = ''; hide(id); }
+function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+
+function copyText(id, btn) {
+  const el = $(id);
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+// ── NAMESPACE ─────────────────────────────────────────────────
+let nsTimer = null;
+$('input-namespace').addEventListener('input', function() {
+  clearTimeout(nsTimer);
+  const val = slugify(this.value);
+  $('namespace-availability').textContent = '';
+  $('namespace-availability').className = '';
+  if (!val) return;
+  nsTimer = setTimeout(() => checkNs(val), 500);
+});
+
+async function checkNs(ns) {
+  try {
+    const r = await fetch(`${BASE}/${ns}/ping`);
+    const el = $('namespace-availability');
+    if (r.ok) {
+      el.textContent = `⚠ "${ns}" already exists — you can still use it`;
+      el.className = 'taken';
+    } else {
+      el.textContent = `✓ "${ns}" is available`;
+      el.className = 'available';
+    }
+  } catch(e) {}
+}
+
+// ── RESOURCE ──────────────────────────────────────────────────
+function saveAndAddResource() {
+  const name  = $('input-resource').value.trim();
+  const route = $('input-route').value.trim();
+  const schema = $('schema-json-input').value.trim();
+
+  if (!name || !route) { alert('Enter resource name and route'); return; }
+
+  // parse schema if provided
+  let parsedSchema = {};
+  if (schema) {
+    try { parsedSchema = JSON.parse(schema); }
+    catch(e) { alert('Invalid schema JSON'); return; }
+  }
+
+  const authEnabled = $('auth-toggle').checked;
+  const authConfig = authEnabled ? {
+    loginRoute: $('input-login-route').value.trim() || '/auth/login',
+    tokenHeader: $('input-token').value.trim() || 'Authorization',
+  } : null;
+
+  resources.push({ name, route, schema: parsedSchema, auth: authConfig });
+
+  // Chip
+  const chip = document.createElement('span');
+  chip.className = 'resource-chip';
+  chip.innerHTML = `/${name} <button class="btn-remove" style="border:none;background:transparent;color:inherit;cursor:pointer;padding:0 0 0 4px" onclick="removeResource(${resources.length-1},this.parentElement)">✕</button>`;
+  $('resource-list').appendChild(chip);
+
+  // Reset fields
+  $('input-resource').value = '';
+  $('input-route').value = '';
+  $('schema-json-input').value = '';
+  $('ai-schema-prompt').value = '';
+  $('json-parse-status').textContent = '';
+
+  updateEndpointPreview();
+}
+
+function removeResource(idx, chip) {
+  resources.splice(idx, 1);
+  chip.remove();
+  updateEndpointPreview();
+}
+
+// ── SCHEMA LIVE PARSE ──────────────────────────────────────────
+$('schema-json-input').addEventListener('input', function() {
+  const s = this.value.trim();
+  const el = $('json-parse-status');
+  if (!s) { el.textContent = ''; el.className = ''; return; }
+  try {
+    JSON.parse(s);
+    el.textContent = '✓ Valid JSON';
+    el.className = 'ok';
+  } catch(e) {
+    el.textContent = '✗ ' + e.message;
+    el.className = 'err';
+  }
+});
+
+// ── AI SCHEMA GENERATE ─────────────────────────────────────────
+async function generateSchemaWithAI() {
+  const prompt = $('ai-schema-prompt').value.trim();
+  if (!prompt) { $('ai-schema-status').textContent = 'Enter a description first'; return; }
+
+  const btn = $('ai-generate-btn');
+  btn.textContent = '⏳ Generating…';
+  btn.disabled = true;
+  $('ai-schema-status').textContent = 'Calling AI…';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `Generate a JSON schema object for a REST API resource described as: "${prompt}".
+Return ONLY a valid JSON object where keys are field names and values are types like "string", "integer", "boolean", "number".
+No explanation, no markdown, just the raw JSON object. Example: {"name":"string","age":"integer","email":"string"}`
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    JSON.parse(clean); // validate
+    $('schema-json-input').value = JSON.stringify(JSON.parse(clean), null, 2);
+    $('ai-schema-status').textContent = '✓ Schema generated';
+    $('json-parse-status').textContent = '✓ Valid JSON';
+    $('json-parse-status').className = 'ok';
+  } catch(e) {
+    $('ai-schema-status').textContent = '✗ Failed: ' + e.message;
+  } finally {
+    btn.textContent = '✦ AI';
+    btn.disabled = false;
+  }
+}
+
+// ── AUTH TOGGLE ────────────────────────────────────────────────
+function toggleAuth() {
+  const on = $('auth-toggle').checked;
+  on ? show('auth-config') : hide('auth-config');
+}
+
+// ── ENDPOINT PREVIEW ──────────────────────────────────────────
+function updateEndpointPreview() {
+  const ns = slugify($('input-namespace').value) || 'namespace';
+  const last = resources[resources.length - 1];
+  const route = last ? last.route : '/resource';
+  $('preview-route-path').textContent = `${BASE}/${ns}${route}`;
+
+  const methods = ['GET','POST','PUT','DELETE'];
+  const descs = ['List all','Create new','Update by ID','Delete by ID'];
+  $('preview-endpoints').innerHTML = methods.map((m,i) => `
+    <div class="endpoint-row">
+      <span class="method-badge method-${m}">${m}</span>
+      <span>${route}${m==='PUT'||m==='DELETE'?'/:id':''}</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--ink4)">${descs[i]}</span>
+    </div>`).join('');
+}
+
+// ── STEP NAV ──────────────────────────────────────────────────
+function goToStep2() {
+  const ns = slugify($('input-namespace').value);
+  if (!ns) { setErr('step1-error', 'Enter a namespace slug'); return; }
+  if (!resources.length) { setErr('step1-error', 'Add at least one resource'); return; }
+  clearErr('step1-error');
+
+  // Build review cards
+  $('resource-sections').innerHTML = resources.map((r, i) => `
+    <div class="resource-card">
+      <div class="resource-section-heading">
+        <div>
+          <div class="resource-card-name">/${r.name}</div>
+          <div class="resource-card-meta">${r.route} · ${Object.keys(r.schema).length} fields</div>
+        </div>
+      </div>
+      <div class="step2-schema-summary">
+        ${Object.entries(r.schema).map(([k,v]) => `
+          <span class="schema-chip">${k} <span class="chip-type">${v}</span></span>`).join('')}
+      </div>
+    </div>`).join('');
+
+  hide('step-1');
+  show('step-2');
+  $('step-pill-1').classList.remove('active');
+  $('step-pill-2').classList.add('active');
+}
+
+function goBackToStep1() {
+  show('step-1');
+  hide('step-2');
+  $('step-pill-1').classList.add('active');
+  $('step-pill-2').classList.remove('active');
+}
+
+// ── DEPLOY ────────────────────────────────────────────────────
+async function submitCreate() {
+  const ns = slugify($('input-namespace').value);
+  const btn = $('submit-btn');
+  btn.textContent = '⏳ Deploying…';
+  btn.disabled = true;
+  clearErr('step2-error');
+
+  try {
+    // Create namespace + resources one by one
+    let token = '';
+
+    for (let i = 0; i < resources.length; i++) {
+      const r = resources[i];
+      const body = {
+        namespace: ns,
+        name: r.name,
+        route: r.route,
+        schema: r.schema,
+      };
+
+      const resp = await fetch(`${BASE}/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(data.error || data.message || `HTTP ${resp.status}`);
+      }
+
+      // Capture token from first resource creation
+      if (i === 0 && data.token) token = data.token;
+      if (i === 0 && data.ownerToken) token = data.ownerToken;
+      if (i === 0 && data.owner_token) token = data.owner_token;
+    }
+
+    ownerToken = token;
+    deployedNs = ns;
+    showOutput(ns, token);
+    saveRecent(ns, token);
+
+  } catch(e) {
+    setErr('step2-error', '✗ ' + e.message);
+    btn.textContent = '🚀 Deploy API';
+    btn.disabled = false;
+  }
+}
+
+// ── SHOW OUTPUT ───────────────────────────────────────────────
+function showOutput(ns, token) {
+  // Script tag
+  const scriptTag = `<script src="${BASE}/interceptor/${ns}.js"><\/script>`;
+  $('output-script-tag').textContent = scriptTag;
+
+  // Schema chips
+  $('output-schema-summary').innerHTML = resources.map(r =>
+    Object.entries(r.schema).map(([k,v]) =>
+      `<span class="schema-chip">${k} <span class="chip-type">${v}</span></span>`
+    ).join('')
+  ).join('');
+
+  // Endpoints
+  $('output-endpoints').innerHTML = resources.flatMap(r =>
+    ['GET','POST','PUT','DELETE'].map((m,i) => {
+      const path = r.route + (m==='PUT'||m==='DELETE' ? '/:id' : '');
+      return `<div class="endpoint-row">
+        <span class="method-badge method-${m}">${m}</span>
+        <span style="font-family:var(--mono);font-size:12px">${BASE}/${ns}${path}</span>
+      </div>`;
+    })
+  ).join('');
+
+  // Fetch snippets
+  $('output-fetch-snippets').innerHTML = resources.map(r => `
+    <div class="code-row">
+      <span class="code-value">fetch('${BASE}/${ns}${r.route}')</span>
+      <button class="btn-copy" onclick="copyText('fetch-snip-${r.name}',this)">Copy</button>
+    </div>
+    <span id="fetch-snip-${r.name}" style="display:none">fetch('${BASE}/${ns}${r.route}')</span>
+  `).join('');
+
+  // Share block
+  $('output-share-url').textContent = `${BASE}/${ns}`;
+  $('output-mode-badge').textContent = 'Owner';
+
+  if (token) {
+    $('output-token-value').textContent = token;
+    show('output-mode-owner');
+  }
+
+  show('output-share-block');
+  show('output-panel');
+
+  // Tester URL
+  const firstRoute = resources[0]?.route || '';
+  // Pre-fill tester if present
+  const testerInput = document.querySelector('#tester-auth-header');
+  if (testerInput && token) testerInput.placeholder = token;
+
+  // Scroll to output
+  $('output-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── RECENT APIs ───────────────────────────────────────────────
+function saveRecent(ns, token) {
+  recentApis = recentApis.filter(r => r.ns !== ns);
+  recentApis.unshift({ ns, token, ts: Date.now() });
+  recentApis = recentApis.slice(0, 5);
+  localStorage.setItem('md_recent', JSON.stringify(recentApis));
+  renderRecent();
+}
+
+function renderRecent() {
+  if (!recentApis.length) { hide('recent-apis-container'); return; }
+  show('recent-apis-container');
+  $('recent-apis-list').innerHTML = recentApis.map(r => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--ink2);flex:1">${r.ns}</span>
+      <button class="btn-ghost btn-sm" onclick="loadRecent('${r.ns}','${r.token}')">Open</button>
+    </div>`).join('');
+}
+
+function loadRecent(ns, token) {
+  $('input-namespace').value = ns;
+  ownerToken = token;
+  deployedNs = ns;
+  // minimal output with stored values
+  $('output-script-tag').textContent = `<script src="${BASE}/interceptor/${ns}.js"><\/script>`;
+  $('output-share-url').textContent = `${BASE}/${ns}`;
+  $('output-mode-badge').textContent = 'Owner';
+  $('output-token-value').textContent = token;
+  show('output-mode-owner');
+  show('output-share-block');
+  $('output-schema-summary').innerHTML = '';
+  $('output-endpoints').innerHTML = `<div class="endpoint-row" style="font-size:11px;color:var(--ink4)">Reopen to see endpoints</div>`;
+  $('output-fetch-snippets').innerHTML = '';
+  show('output-panel');
+}
+
+function clearRecentApis() {
+  recentApis = [];
+  localStorage.removeItem('md_recent');
+  hide('recent-apis-container');
+}
+
+// ── MANUAL OPEN ───────────────────────────────────────────────
+async function manualOpenApi() {
+  const val = $('manual-slug-input').value.trim();
+  if (!val) return;
+  clearErr('manual-open-error');
+  try {
+    const r = await fetch(`${BASE}/${val}/ping`);
+    if (r.ok) {
+      loadRecent(val, '');
+    } else {
+      setErr('manual-open-error', `API "${val}" not found`);
+    }
+  } catch(e) {
+    setErr('manual-open-error', 'Network error');
+  }
+}
+
+// ── UNLOCK OWNER MODE ─────────────────────────────────────────
+async function unlockOwnerMode() {
+  const token = $('viewer-token-input').value.trim();
+  if (!token) return;
+  ownerToken = token;
+  hide('output-mode-viewer');
+  $('output-token-value').textContent = token;
+  show('output-mode-owner');
+  hide('viewer-token-error');
+}
+
+// ── API TESTER ────────────────────────────────────────────────
+function onTesterMethodChange() {
+  const m = $('tester-method-select').value;
+  m === 'GET' || m === 'DELETE' ? hide('tester-body-wrap') : show('tester-body-wrap');
+  m !== 'GET' ? show('tester-auth-wrap') : hide('tester-auth-wrap');
+}
+
+async function sendTestRequest() {
+  const ns   = deployedNs || slugify($('input-namespace').value);
+  const method = $('tester-method-select').value;
+  const auth   = $('tester-auth-header').value.trim();
+  const bodyTxt = $('tester-body').value.trim();
+  const route  = resources[0]?.route || '/resource';
+  const url    = `${BASE}/${ns}${route}`;
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers['Authorization'] = auth.startsWith('Bearer ') ? auth : 'Bearer ' + auth;
+
+  const opts = { method, headers };
+  if ((method === 'POST' || method === 'PUT') && bodyTxt) opts.body = bodyTxt;
+
+  const t0 = Date.now();
+  try {
+    const r = await fetch(url, opts);
+    const ms = Date.now() - t0;
+    const data = await r.json().catch(() => ({}));
+    const cls = r.status < 300 ? 's2xx' : r.status < 500 ? 's4xx' : 's5xx';
+    $('tester-status-badge').textContent = r.status;
+    $('tester-status-badge').className = `status-badge ${cls}`;
+    $('tester-response-body').textContent = JSON.stringify(data, null, 2);
+    show('tester-response');
+    addLog(method, route, r.status, ms);
+  } catch(e) {
+    $('tester-response-body').textContent = e.message;
+    $('tester-status-badge').textContent = 'ERR';
+    $('tester-status-badge').className = 'status-badge s5xx';
+    show('tester-response');
+  }
+}
+
+// ── LOGS ──────────────────────────────────────────────────────
+let logs = [];
+function addLog(method, route, status, ms) {
+  logs.unshift({ method, route, status, ms, time: new Date().toLocaleTimeString() });
+  if (logs.length > 20) logs.pop();
+  const tbody = document.querySelector('#output-logs-table tbody');
+  hide('output-logs-empty');
+  show('output-logs-table');
+  tbody.innerHTML = logs.map(l => `
+    <tr>
+      <td><span class="method-badge method-${l.method}" style="display:inline-block">${l.method}</span></td>
+      <td>${l.route}</td>
+      <td>${l.status}</td>
+      <td>${l.ms}</td>
+      <td>${l.time}</td>
+    </tr>`).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+renderRecent();
+onTesterMethodChange();
+</script>
 </body>
 </html>
