@@ -76,10 +76,10 @@
     .stat-val { font-size: 1.5rem; font-weight: 300; color: var(--txt); letter-spacing: -.03em; line-height: 1; }
     .stat-lbl { font-family: var(--m); font-size: .52rem; color: var(--txt2); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
 
-    /* CARDS */
+    /* CARDS — 4 columns */
     .cards-row {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 16px; padding: 20px 24px 0; max-width: 1300px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 14px; padding: 20px 20px 0; max-width: 1400px; margin: 0 auto;
     }
     .card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.04); overflow: hidden; }
     .card-head { padding: 16px 18px 10px; display: flex; align-items: center; gap: 10px; }
@@ -167,16 +167,6 @@
     .toggle-lbl { font-size: .7rem; font-weight: 600; color: var(--txt2); letter-spacing: .04em; text-transform: uppercase; }
     .auth-inner { background: var(--input-bg); border-radius: 10px; padding: 12px; }
 
-    /* STEP INDICATOR */
-    .step-ind { display: flex; align-items: center; gap: 0; margin-bottom: 14px; background: #F1F3F5; border-radius: 10px; padding: 3px; }
-    .step-pill { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 8px; border-radius: 8px; cursor: pointer; transition: all .3s; }
-    .step-pill.active { background: #fff; box-shadow: var(--shadow2); }
-    .step-num-sm { font-family: var(--m); font-size: .58rem; background: #E2E1E6; border-radius: 4px; padding: 1px 5px; color: var(--txt2); }
-    .step-pill.active .step-num-sm { background: rgba(156,141,212,.15); color: var(--purple); }
-    .step-lbl { font-size: .7rem; font-weight: 600; color: var(--txt2); }
-    .step-pill.active .step-lbl { color: var(--txt); }
-    .step-sep { width: 12px; height: 1px; background: var(--bor); flex-shrink: 0; }
-
     /* CHIPS & RESOURCE CARDS */
     .resource-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(156,141,212,.1); border: 1px solid rgba(156,141,212,.25); border-radius: 100px; padding: 3px 10px; font-family: var(--m); font-size: .66rem; color: var(--purple); margin: 3px; animation: chipIn .3s ease; }
     @keyframes chipIn { from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)} }
@@ -200,7 +190,7 @@
     /* DIVIDER */
     .divider { height: 1px; background: rgba(0,0,0,0.05); margin: 12px 0; }
 
-    /* OUTPUT */
+    /* OUTPUT — Card 3 */
     .out-lbl { font-family: var(--f); font-size: .56rem; font-weight: 700; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     .out-lbl::before { content: ''; width: 12px; height: 1px; background: var(--purple); }
     .out-block { margin-bottom: 18px; }
@@ -214,8 +204,8 @@
     .chip-type { color: var(--txt2); margin-left: 3px; }
     #output-mode-badge { font-family: var(--m); font-size: .58rem; font-weight: 700; letter-spacing: .06em; }
 
-    /* ENDPOINT CARDS — one per method */
-    .ep-list { display: flex; flex-direction: column; gap: 8px; }
+    /* ENDPOINT CARDS — organised collapsible per method */
+    .ep-list { display: flex; flex-direction: column; gap: 6px; }
     .ep-card {
       border-radius: 10px; overflow: hidden;
       border: 1px solid rgba(0,0,0,.06);
@@ -237,7 +227,7 @@
     .ep-card-body.open { display: block; }
     .ep-card-url { font-family: var(--m); font-size: .69rem; color: var(--txt); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ep-card-desc { font-size: .66rem; color: var(--txt2); margin-left: auto; white-space: nowrap; }
-    .ep-toggle { font-size: .6rem; color: var(--txt2); margin-left: 6px; transition: transform .2s; }
+    .ep-toggle { font-size: .6rem; color: var(--txt2); margin-left: 6px; transition: transform .2s; flex-shrink: 0; }
     .ep-card.expanded .ep-toggle { transform: rotate(180deg); }
 
     /* method colour themes */
@@ -255,7 +245,7 @@
     .ep-snippet {
       background: #1e1e2e; border-radius: 7px; padding: 10px 12px;
       font-family: var(--m); font-size: .66rem; line-height: 1.9;
-      color: #cdd6f4; overflow-x: auto; margin-bottom: 8px;
+      color: #cdd6f4; overflow-x: auto; margin-bottom: 8px; white-space: pre;
     }
     .mGET { color: #4ade80; } .mPOST { color: #60a5fa; } .mDELETE { color: #f38ba8; } .mPUT { color: #fb923c; }
     .s2c { color: #4ade80; } .s4c { color: #f38ba8; }
@@ -294,6 +284,14 @@
     .log-err .log-status { color: #e63946; }
     @keyframes logIn { from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)} }
 
+    /* SEED RECORDS — Card 4 */
+    .seed-placeholder {
+      background: rgba(156,141,212,.05); border: 1.5px dashed rgba(156,141,212,.25);
+      border-radius: 10px; padding: 20px 16px; text-align: center;
+      color: var(--txt2); font-family: var(--m); font-size: .68rem; line-height: 1.8;
+    }
+    .seed-placeholder .seed-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+
     /* prev-route kept for compat */
     .prev-route { background: #F1F3F5; border-radius: 9px; padding: 11px 14px; position: relative; overflow: hidden; }
     .prev-route::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--purple); border-radius: 3px 0 0 3px; }
@@ -301,7 +299,7 @@
 
     /* FOOTER */
     .footer-bar { background: var(--bg-warm); border-top: 1px solid rgba(0,0,0,0.06); padding: 12px 24px; margin-top: 24px; }
-    .footer-top { max-width: 1300px; margin: 0 auto; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .footer-top { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .footer-live-lbl { font-family: var(--f); font-size: .76rem; font-weight: 600; color: var(--txt); display: flex; align-items: center; gap: 8px; }
     .live-badge { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: #16a34a; font-family: var(--m); font-size: .54rem; padding: 2px 8px; border-radius: 4px; letter-spacing: .06em; display: flex; align-items: center; gap: 4px; }
     .live-badge::before { content: ''; width: 5px; height: 5px; background: var(--green); border-radius: 50%; animation: livePulse 2s infinite; }
@@ -314,7 +312,7 @@
     .footer-method { background: #fff; border: 1px solid rgba(0,0,0,.1); border-radius: 7px; padding: 6px 10px; color: var(--txt); font-family: var(--m); font-size: .7rem; outline: none; cursor: pointer; }
     .footer-send { background: var(--purple-btn); color: #fff; border: none; padding: 7px 16px; border-radius: 7px; font-family: var(--f); font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .2s; }
     .footer-send:hover { background: #8a7bc7; }
-    .footer-bottom { max-width: 1300px; margin: 0 auto; }
+    .footer-bottom { max-width: 1400px; margin: 0 auto; }
     .footer-url-inp { width: 100%; background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 8px; padding: 8px 12px; color: var(--txt2); font-family: var(--m); font-size: .7rem; outline: none; }
     .footer-url-inp::placeholder { color: #bbb; }
 
@@ -359,81 +357,61 @@
   </div>
 </section>
 
-<!-- CARDS -->
+<!-- CARDS — 4 columns -->
 <div class="cards-row">
 
-  <!-- CARD 1: NAMESPACE -->
+  <!-- ═══════════════════════════════════════════
+       CARD 1: NAMESPACE
+       ═══════════════════════════════════════════ -->
   <div class="card">
     <div class="card-head">
       <div class="card-num">1</div>
-      <div><div class="card-title">Namespace</div></div>
+      <div><div class="card-title">Namespace</div><div class="card-sub">API slug &amp; auth config</div></div>
     </div>
     <div class="card-body">
-      <div class="step-ind">
-        <div class="step-pill active" id="step-pill-1">
-          <span class="step-num-sm">01</span><span class="step-lbl">Define Resource</span>
-        </div>
-        <div class="step-sep"></div>
-        <div class="step-pill" id="step-pill-2">
-          <span class="step-num-sm">02</span><span class="step-lbl">Seed Records</span>
-        </div>
-      </div>
-
-      <!-- STEP 1 -->
-      <div class="step-block" id="step-1">
-        <div class="field">
-          <label class="field-lbl">API Slug</label>
-          <div class="inp-row">
-            <input type="text" id="input-namespace" class="inp" placeholder="my-api" autocomplete="off" />
-            <span id="namespace-availability" style="font-size:.6rem;color:var(--txt2);white-space:nowrap;"></span>
-            <button type="button" id="namespace-randomize" class="btn-ghost hidden" style="padding:5px 9px;font-size:.66rem;">✦</button>
-          </div>
-        </div>
-        <div class="field">
-          <label class="field-lbl">Open Existing</label>
-          <div class="inp-row">
-            <input type="text" id="manual-slug-input" class="inp" placeholder="Paste slug or ID." autocomplete="off" />
-            <button class="btn-open" onclick="manualOpenApi()">Open</button>
-          </div>
-          <div id="manual-open-error" class="hidden" style="font-family:var(--m);font-size:.62rem;color:var(--red);margin-top:4px;"></div>
-        </div>
-        <div id="recent-apis-container" class="hidden">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <label class="field-lbl" style="margin:0;">Recent APIs</label>
-            <button id="clear-recent-btn" class="btn-ghost" style="padding:2px 7px;font-size:.58rem;" onclick="clearRecentApis()">Clear</button>
-          </div>
-          <div id="recent-apis-list" style="display:flex;flex-direction:column;gap:5px;"></div>
-        </div>
-        <div class="divider"></div>
-        <!-- Auth -->
-        <div class="toggle-row">
-          <span class="toggle-lbl">Enable Auth</span>
-          <label class="switch"><input type="checkbox" id="auth-toggle" onchange="toggleAuth()" /><span class="slider"></span></label>
-        </div>
-        <div id="auth-config" class="hidden">
-          <div class="auth-inner">
-            <div class="field"><label class="field-lbl">Login Route</label><input type="text" id="input-login-route" class="inp" placeholder="/api/login" autocomplete="off" /></div>
-            <div class="field"><label class="field-lbl">Token</label><input type="text" id="input-token" class="inp" placeholder="mock_abc123" autocomplete="off" /></div>
-            <div class="field"><label class="field-lbl">Protected Routes</label><div id="protected-routes-list"></div></div>
-          </div>
-        </div>
-        <div id="step1-error" class="error-msg hidden"></div>
-      </div>
-
-      <!-- STEP 2 -->
-      <div class="step-block hidden" id="step-2">
-        <div id="resource-sections"></div>
-        <div id="step2-error" class="error-msg hidden"></div>
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn-ghost" onclick="goBackToStep1()">&#8592; Back</button>
-          <button class="btn-primary" id="submit-btn" onclick="submitCreate()" style="flex:1;margin:0;">Generate Mock API</button>
+      <div class="field">
+        <label class="field-lbl">API Slug</label>
+        <div class="inp-row">
+          <input type="text" id="input-namespace" class="inp" placeholder="my-api" autocomplete="off" />
+          <span id="namespace-availability" style="font-size:.6rem;color:var(--txt2);white-space:nowrap;"></span>
+          <button type="button" id="namespace-randomize" class="btn-ghost hidden" style="padding:5px 9px;font-size:.66rem;">✦</button>
         </div>
       </div>
-
+      <div class="field">
+        <label class="field-lbl">Open Existing</label>
+        <div class="inp-row">
+          <input type="text" id="manual-slug-input" class="inp" placeholder="Paste slug or ID." autocomplete="off" />
+          <button class="btn-open" onclick="manualOpenApi()">Open</button>
+        </div>
+        <div id="manual-open-error" class="hidden" style="font-family:var(--m);font-size:.62rem;color:var(--red);margin-top:4px;"></div>
+      </div>
+      <div id="recent-apis-container" class="hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label class="field-lbl" style="margin:0;">Recent APIs</label>
+          <button id="clear-recent-btn" class="btn-ghost" style="padding:2px 7px;font-size:.58rem;" onclick="clearRecentApis()">Clear</button>
+        </div>
+        <div id="recent-apis-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+      </div>
+      <div class="divider"></div>
+      <!-- Auth -->
+      <div class="toggle-row">
+        <span class="toggle-lbl">Enable Auth</span>
+        <label class="switch"><input type="checkbox" id="auth-toggle" onchange="toggleAuth()" /><span class="slider"></span></label>
+      </div>
+      <div id="auth-config" class="hidden">
+        <div class="auth-inner">
+          <div class="field"><label class="field-lbl">Login Route</label><input type="text" id="input-login-route" class="inp" placeholder="/api/login" autocomplete="off" /></div>
+          <div class="field"><label class="field-lbl">Token</label><input type="text" id="input-token" class="inp" placeholder="mock_abc123" autocomplete="off" /></div>
+          <div class="field"><label class="field-lbl">Protected Routes</label><div id="protected-routes-list"></div></div>
+        </div>
+      </div>
+      <div id="step1-error" class="error-msg hidden"></div>
     </div>
   </div>
 
-  <!-- CARD 2: RESOURCE -->
+  <!-- ═══════════════════════════════════════════
+       CARD 2: RESOURCE
+       ═══════════════════════════════════════════ -->
   <div class="card">
     <div class="card-head">
       <div class="card-num">2</div>
@@ -455,14 +433,17 @@
     </div>
   </div>
 
-  <!-- CARD 3: SCHEMA & AUTH -->
+  <!-- ═══════════════════════════════════════════
+       CARD 3: SCHEMA & AUTH — output lives here
+       ═══════════════════════════════════════════ -->
   <div class="card">
     <div class="card-head">
       <div class="card-num">3</div>
-      <div><div class="card-title">Schema &amp; Auth</div></div>
+      <div><div class="card-title">Schema &amp; Auth</div><div class="card-sub">Fields &amp; generate</div></div>
     </div>
     <div class="card-body">
 
+      <!-- Schema form (pre-generate) -->
       <div class="step-block" id="step-1-schema">
         <div class="field">
           <label class="field-lbl">Schema</label>
@@ -481,12 +462,13 @@
             <span class="slider"></span>
           </label>
         </div>
-        <button class="btn-primary" onclick="goToStep2()">Continue &rarr;</button>
+        <button class="btn-primary" onclick="goToStep2()">Generate Mock API &rarr;</button>
         <div id="step1-error-card3" class="error-msg hidden" style="margin-top:8px;"></div>
       </div>
 
-      <!-- OUTPUT (after generate) -->
+      <!-- OUTPUT panel (post-generate) -->
       <section id="output-panel" class="hidden">
+        <!-- Script tag -->
         <div class="out-block out-primary">
           <div class="out-lbl">Script tag</div>
           <div class="code-row">
@@ -495,10 +477,14 @@
           </div>
           <div class="session-note">⚠ Records added during testing are session-only.</div>
         </div>
+
+        <!-- Schema chips -->
         <div class="out-block">
           <div class="out-lbl">Schema</div>
           <div id="output-schema-summary" class="schema-chips"></div>
         </div>
+
+        <!-- Share / token -->
         <div class="out-block hidden" id="output-share-block">
           <div class="out-lbl" style="display:flex;justify-content:space-between;">
             <span>Share API</span><span id="output-mode-badge"></span>
@@ -522,9 +508,25 @@
             <div id="viewer-token-error" class="hidden" style="font-family:var(--m);font-size:.62rem;color:var(--red);margin-top:5px;"></div>
           </div>
         </div>
-        <div class="out-block"><div class="out-lbl">Expires</div><div id="output-expiry" class="expiry-val mono"></div></div>
-        <div class="out-block"><div class="out-lbl">Endpoints</div><div id="output-endpoints" class="ep-list"></div></div>
-        <div class="out-block" id="output-fetch-block"><div class="out-lbl">Fetch Snippet</div><div id="output-fetch-snippets"></div></div>
+
+        <!-- Expiry -->
+        <div class="out-block">
+          <div class="out-lbl">Expires</div>
+          <div id="output-expiry" class="expiry-val mono"></div>
+        </div>
+
+        <!-- Endpoints — organised collapsible cards -->
+        <div class="out-block">
+          <div class="out-lbl">Endpoints</div>
+          <div id="output-endpoints" class="ep-list"></div>
+        </div>
+
+        <!-- Fetch snippets (hidden — consumed by ep-cards) -->
+        <div class="out-block hidden" id="output-fetch-block">
+          <div id="output-fetch-snippets"></div>
+        </div>
+
+        <!-- Inline Tester -->
         <div class="out-block">
           <div class="out-lbl">Inline API Tester</div>
           <div class="tester-row"><select id="tester-method-select" class="select-inp" onchange="onTesterMethodChange()"></select></div>
@@ -542,12 +544,44 @@
             <pre id="tester-response-body" class="resp-body"></pre>
           </div>
         </div>
+
+        <!-- Request Logs -->
         <div class="out-block" id="output-logs-block">
           <div class="out-lbl">Request Logs</div>
           <div id="output-logs-empty" class="logs-empty">No requests logged yet.</div>
           <div id="output-logs-table"></div>
         </div>
       </section>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       CARD 4: SEED RECORDS
+       ═══════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-num">4</div>
+      <div><div class="card-title">Seed Records</div><div class="card-sub">Initial data for resources</div></div>
+    </div>
+    <div class="card-body">
+
+      <!-- Placeholder shown before any resources are added -->
+      <div id="seed-placeholder" class="seed-placeholder">
+        <span class="seed-icon">🌱</span>
+        Add resources &amp; generate the API<br>to seed initial records here.
+      </div>
+
+      <!-- Seed content injected here after generate (id kept for script.js compat) -->
+      <div id="resource-sections" class="hidden"></div>
+
+      <div id="step2-error" class="error-msg hidden"></div>
+
+      <!-- Submit / back buttons (shown post-resource-add) -->
+      <div id="seed-action-row" class="hidden" style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn-ghost" onclick="goBackToStep1()">&#8592; Back</button>
+        <button class="btn-primary" id="submit-btn" onclick="submitCreate()" style="flex:1;margin:0;">Generate Mock API</button>
+      </div>
 
     </div>
   </div>
@@ -587,105 +621,128 @@
 
 <script src="script.js"></script>
 <script>
-/* ── MockDock UI Overrides: endpoint cards + logs ── */
+/* ── MockDock UI: endpoint cards + seed records wiring + logs ── */
 
-// Wait for script.js to finish setting up, then override render functions
 window.addEventListener('load', function() {
 
-  /* ── 1. Override endpoint list rendering ── */
+  /* ─── 1. Wire up seed-records card to show when resources exist ─── */
+  function syncSeedCard() {
+    var sections  = document.getElementById('resource-sections');
+    var placeholder = document.getElementById('seed-placeholder');
+    var actionRow = document.getElementById('seed-action-row');
+    if (!sections) return;
+    var hasContent = sections.children.length > 0;
+    placeholder.classList.toggle('hidden', hasContent);
+    sections.classList.toggle('hidden', !hasContent);
+    if (actionRow) actionRow.style.display = hasContent ? 'flex' : 'none';
+  }
+
+  // Observe resource-sections for changes
+  var rsec = document.getElementById('resource-sections');
+  if (rsec) {
+    new MutationObserver(syncSeedCard).observe(rsec, { childList: true, subtree: true });
+  }
+  syncSeedCard();
+
+  /* ─── 2. Override fillOutputPanel to trigger endpoint re-render ─── */
   var origFillOutputPanel = window.fillOutputPanel;
   if (typeof window.fillOutputPanel === 'function') {
     window.fillOutputPanel = function(data) {
       origFillOutputPanel(data);
-      reRenderEndpoints();
-      patchLogRenderer();
+      setTimeout(reRenderEndpoints, 80);
+      setTimeout(patchLogRenderer, 80);
     };
   }
 
-  // Also watch for output-panel becoming visible (generated)
+  // Also watch output-panel becoming visible
   var opanel = document.getElementById('output-panel');
   if (opanel) {
     new MutationObserver(function(muts) {
       muts.forEach(function(m) {
         if (m.attributeName === 'class' && !opanel.classList.contains('hidden')) {
-          setTimeout(reRenderEndpoints, 80);
-          setTimeout(patchLogRenderer, 80);
+          setTimeout(reRenderEndpoints, 100);
+          setTimeout(patchLogRenderer, 100);
         }
       });
     }).observe(opanel, { attributes: true });
   }
 
+  /* ─── 3. Endpoint card renderer ─── */
   function reRenderEndpoints() {
     var epList = document.getElementById('output-endpoints');
     if (!epList) return;
-    var rows = epList.querySelectorAll('.ep-row');
-    if (!rows.length) return;
 
-    // collect existing ep-rows data
+    // Collect data from whatever script.js put in there
+    var rawItems = epList.querySelectorAll('.ep-row, [class*="ep-"], .method-badge');
     var eps = [];
-    rows.forEach(function(row) {
-      var badge = row.querySelector('.method-badge');
-      var url   = row.querySelector('.ep-card-url') || row.childNodes[1];
-      var desc  = row.querySelector('.ep-card-desc') || row.childNodes[2];
-      var method = badge ? badge.textContent.trim() : '';
-      var urlText = '';
-      var descText = '';
-      row.childNodes.forEach(function(n) {
-        if (n.nodeType === 3) { var t = n.textContent.trim(); if (t) urlText = t; }
-      });
-      if (!urlText) {
-        var spans = row.querySelectorAll('span:not(.method-badge)');
-        if (spans[0]) urlText = spans[0].textContent.trim();
-        if (spans[1]) descText = spans[1].textContent.trim();
-      }
-      // get snippet if sibling fetch-snippet exists
-      var fetchSnippet = '';
-      var fsBlock = document.getElementById('output-fetch-block');
-      if (fsBlock) {
-        var allSnippets = fsBlock.querySelectorAll('.fetch-snippet');
-        allSnippets.forEach(function(s) {
-          if (s.textContent.includes(method)) fetchSnippet = s.innerHTML;
-        });
-      }
-      if (method) eps.push({ method: method, url: urlText, desc: descText });
-    });
 
-    if (!eps.length) return;
-
-    // Also grab fetch snippets by method from output-fetch-block
-    var snippetMap = {};
-    var fsBlock = document.getElementById('output-fetch-block');
-    if (fsBlock) {
-      var allSnippets = fsBlock.querySelectorAll('.fetch-snippet');
-      allSnippets.forEach(function(s) {
-        var txt = s.textContent;
-        ['GET','POST','PUT','DELETE'].forEach(function(m) {
-          if (txt.includes("'" + m + "'") || txt.includes('"' + m + '"') || txt.startsWith(m) || txt.includes('method: "' + m)) {
-            if (!snippetMap[m]) snippetMap[m] = s.innerHTML;
-          }
-        });
-        // GET snippets usually don't have method field
-        if (!snippetMap['GET'] && !txt.includes('method')) snippetMap['GET'] = s.innerHTML;
+    // Try to read existing ep-row style items
+    var epRows = epList.querySelectorAll('.ep-row');
+    if (epRows.length) {
+      epRows.forEach(function(row) {
+        var badge  = row.querySelector('.method-badge');
+        var method = badge ? badge.textContent.trim() : '';
+        var urlEl  = row.querySelector('.ep-card-url');
+        var urlText = urlEl ? urlEl.textContent.trim() : '';
+        if (!urlText) {
+          row.childNodes.forEach(function(n) {
+            if (n.nodeType === 3) { var t = n.textContent.trim(); if (t) urlText = t; }
+          });
+        }
+        if (method) eps.push({ method: method, url: urlText });
       });
     }
 
+    // Also collect any method-badge spans that aren't already in ep-cards
+    if (!eps.length) {
+      var badges = epList.querySelectorAll('.method-badge');
+      badges.forEach(function(badge) {
+        var method = badge.textContent.trim();
+        var parent = badge.parentElement;
+        var spans  = parent ? parent.querySelectorAll('span:not(.method-badge), code') : [];
+        var urlText = '';
+        spans.forEach(function(s) { if (!urlText && s.textContent.trim()) urlText = s.textContent.trim(); });
+        if (method) eps.push({ method: method, url: urlText });
+      });
+    }
+
+    if (!eps.length) return;
+
+    // Build fetch snippet map from the hidden fetch-block
+    var snippetMap = {};
+    var fsBlock = document.getElementById('output-fetch-block');
+    if (fsBlock) {
+      var allSnippets = fsBlock.querySelectorAll('.fetch-snippet, pre, code');
+      allSnippets.forEach(function(s) {
+        var txt = s.textContent || '';
+        ['GET','POST','PUT','DELETE'].forEach(function(m) {
+          if (!snippetMap[m] && (txt.includes("'" + m + "'") || txt.includes('"' + m + '"') || txt.includes('method: "' + m + '"'))) {
+            snippetMap[m] = s.innerHTML || txt;
+          }
+        });
+        if (!snippetMap['GET'] && txt.includes('fetch(') && !txt.includes('method')) {
+          snippetMap['GET'] = s.innerHTML || txt;
+        }
+      });
+    }
+
+    // Render clean collapsible ep-cards
     epList.innerHTML = eps.map(function(ep, i) {
       var snip = snippetMap[ep.method] || '';
       var bodyHtml = snip
         ? '<div class="ep-snippet">' + snip + '</div>'
-        : '<div style="font-family:var(--m);font-size:.65rem;color:var(--txt2);">' + ep.url + '</div>';
-      return '<div class="ep-card ep-' + ep.method + '" id="epc-' + i + '">' +
-        '<div class="ep-card-head" onclick="toggleEpCard(' + i + ')">' +
-          '<span class="method-badge method-' + ep.method + '">' + ep.method + '</span>' +
-          '<span class="ep-card-url">' + ep.url + '</span>' +
-          '<span class="ep-toggle">▾</span>' +
-        '</div>' +
-        '<div class="ep-card-body" id="epb-' + i + '">' + bodyHtml + '</div>' +
-      '</div>';
+        : '<div style="font-family:var(--m);font-size:.65rem;color:var(--txt2);padding:4px 0;">' + (ep.url || '—') + '</div>';
+      return [
+        '<div class="ep-card ep-' + ep.method + '" id="epc-' + i + '">',
+          '<div class="ep-card-head" onclick="toggleEpCard(' + i + ')">',
+            '<span class="method-badge method-' + ep.method + '">' + ep.method + '</span>',
+            '<span class="ep-card-url">' + (ep.url || '') + '</span>',
+            '<span class="ep-toggle">▾</span>',
+          '</div>',
+          '<div class="ep-card-body" id="epb-' + i + '">' + bodyHtml + '</div>',
+        '</div>'
+      ].join('');
     }).join('');
-
-    // hide the now-redundant fetch snippets block
-    if (fsBlock) fsBlock.style.display = 'none';
   }
 
   window.toggleEpCard = function(i) {
@@ -697,36 +754,26 @@ window.addEventListener('load', function() {
     card.classList.toggle('expanded', !open);
   };
 
-  /* ── 2. Patch log row renderer ── */
+  /* ─── 4. Patch log row renderer ─── */
   function patchLogRenderer() {
-    var origAppendLog = window.appendLogRow;
-    if (typeof origAppendLog !== 'function') {
-      // override the DOM directly — watch for new .log-row elements
-      var logsTable = document.getElementById('output-logs-table');
-      if (!logsTable) return;
-      new MutationObserver(function() {
-        logsTable.querySelectorAll('.log-row[data-patched!="1"]').forEach(function(row) {
-          row.setAttribute('data-patched','1');
-          redesignLogRow(row);
-        });
-      }).observe(logsTable, { childList: true, subtree: true });
-    }
+    var logsTable = document.getElementById('output-logs-table');
+    if (!logsTable) return;
+    new MutationObserver(function() {
+      logsTable.querySelectorAll('.log-row:not([data-patched])').forEach(function(row) {
+        row.setAttribute('data-patched', '1');
+        redesignLogRow(row);
+      });
+    }).observe(logsTable, { childList: true, subtree: true });
   }
 
   function redesignLogRow(row) {
-    // existing log-row has: method, status_code, route, duration, timestamp (from script.js)
-    var cells = row.querySelectorAll('span, div');
-    if (!cells.length) return;
-    var text = row.textContent.trim();
+    var text  = row.textContent.trim();
     var parts = text.split(/\s+/);
-    if (parts.length < 3) return;
+    if (parts.length < 2) return;
     var method = parts[0] || '';
-    var status = '';
-    var route  = '';
-    var time   = '';
-    // find status code (3 digit number)
+    var status = '', route = '', time = '';
     parts.forEach(function(p, i) {
-      if (/^\d{3}$/.test(p)) { status = p; route = parts.slice(1, i).join(' '); time = parts.slice(i+1).join(' '); }
+      if (/^\d{3}$/.test(p)) { status = p; route = parts.slice(1, i).join(' '); time = parts.slice(i + 1).join(' '); }
     });
     if (!status) return;
     var isOk = parseInt(status) < 400;
@@ -736,13 +783,13 @@ window.addEventListener('load', function() {
       '<span class="log-route">' + route + '</span>' +
       '<span class="log-status">' + status + '</span>' +
       '<span class="log-time">' + time + '</span>';
-    row.setAttribute('data-patched','1');
   }
 
   patchLogRenderer();
 });
 </script>
 <script>
+/* ── Sync helpers ── */
 (function(){
   var route = document.getElementById('input-route');
   var bar   = document.getElementById('bar-endpoint-url-inp');
@@ -761,6 +808,7 @@ window.addEventListener('load', function() {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+/* ── Hero 3D ── */
 (function(){
   var canvas = document.getElementById('hero3d');
   if (!canvas || typeof THREE === 'undefined') return;
