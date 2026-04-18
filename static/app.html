@@ -1091,6 +1091,14 @@ window.addEventListener('load', function() {
     // ── grab first resource route from tester select options
     var sel = document.getElementById('tester-method-select');
     var resourceUrl = baseUrl; // fallback
+    if (sel && sel.options.length > 0) {
+      // tester-method-select options are like "GET|http://api.url/..."
+      // The first option is typically GET, which has the base path without /<id>
+      var parts = sel.options[0].value.split('|');
+      if (parts.length > 1) {
+        resourceUrl = parts[1];
+      }
+    }
 
     ['GET','POST','PUT','DELETE'].forEach(function(m) {
       var el = document.getElementById('oc-' + m.toLowerCase() + '-content');
