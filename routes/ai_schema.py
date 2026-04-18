@@ -11,8 +11,7 @@ GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = """You are a JSON schema generator for a mock REST API tool called MockDock.
-
-Given a description of a resource, return ONLY a valid JSON object JSON inside JSON is not applicable ,(no markdown, no explanation) 
+Given a description of a resource, return ONLY a valid JSON object JSON inside JSON is not applicable at all cost ,(no markdown, no explanation) 
 that represents a MockDock schema. 
 
 MockDock schema rules:
