@@ -243,9 +243,16 @@
 
     /* inside ep-card-body */
     .ep-snippet {
-      background: #1e1e2e; border-radius: 7px; padding: 10px 12px;
-      font-family: var(--m); font-size: .66rem; line-height: 1.9;
-      color: #cdd6f4; overflow-x: auto; margin-bottom: 8px; white-space: pre;
+      background: #1e1e2e;
+      border-radius: 7px;
+      padding: 10px 12px;
+      font-family: var(--m);
+      font-size: .66rem;
+      line-height: 1.9;
+      color: #cdd6f4;          /* ← light lavender — the key fix */
+      overflow-x: auto;
+      margin-bottom: 8px;
+      white-space: pre;
     }
     .mGET { color: #4ade80; } .mPOST { color: #60a5fa; } .mDELETE { color: #f38ba8; } .mPUT { color: #fb923c; }
     .s2c { color: #4ade80; } .s4c { color: #f38ba8; }
@@ -747,12 +754,9 @@ window.addEventListener('load', function() {
   function showOutputCards() {
     var row = document.getElementById('output-cards-row');
     if (!row) return;
-    // Reveal the row
     row.classList.remove('hidden');
     row.style.display = 'grid';
-    // Scroll to it smoothly
     setTimeout(function(){ row.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
-    // Populate method cards from the hidden output-endpoints list
     populateMethodCards();
     patchLogRenderer();
   }
@@ -796,7 +800,6 @@ window.addEventListener('load', function() {
 
     // Build curl from fetch snippets or ep url
     function buildCurl(method, url, fetchTxt) {
-      // try to extract token from fetch snippet
       var token = '';
       var tokenMatch = fetchTxt && fetchTxt.match(/Bearer ([a-zA-Z0-9_]+)/);
       if (tokenMatch) token = tokenMatch[1];
@@ -815,6 +818,28 @@ window.addEventListener('load', function() {
       return '';
     }
 
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    /* ─────────────────────────────────────────────────────────────────
+       FIX: explicit background + color on every .ep-snippet so the
+       dark terminal look is guaranteed regardless of CSS cascade order.
+    ───────────────────────────────────────────────────────────────── */
+    var SNIPPET_STYLE = [
+      'font-size:.62rem',
+      'line-height:1.75',
+      'white-space:pre-wrap',
+      'overflow-x:auto',
+      'background:#1e1e2e',   /* dark terminal background */
+      'color:#cdd6f4',        /* light lavender text */
+      'border-radius:7px',
+      'padding:10px 12px',
+      'margin-bottom:8px',
+      'display:block',
+      'font-family:\'Fira Code\',monospace'
+    ].join(';');
+
     function renderTabbed(method, url, fetchTxt, curlTxt) {
       var mid = method.toLowerCase();
       return [
@@ -824,18 +849,14 @@ window.addEventListener('load', function() {
         '</div>',
         (url ? '<div style="font-family:var(--m);font-size:.62rem;color:var(--txt2);margin-bottom:6px;">'+url+'</div>' : ''),
         '<div class="stab-panel active" id="sp-'+mid+'-fetch">',
-          '<div class="ep-snippet" style="font-size:.62rem;line-height:1.75;white-space:pre-wrap;overflow-x:auto;">'+escHtml(fetchTxt || '// No fetch snippet')+'</div>',
+          '<div class="ep-snippet" style="'+SNIPPET_STYLE+'">'+escHtml(fetchTxt || '// No fetch snippet')+'</div>',
           '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-fetch\')">Copy</button>',
         '</div>',
         '<div class="stab-panel" id="sp-'+mid+'-curl">',
-          '<div class="ep-snippet" style="font-size:.62rem;line-height:1.75;white-space:pre-wrap;overflow-x:auto;">'+escHtml(curlTxt)+'</div>',
+          '<div class="ep-snippet" style="'+SNIPPET_STYLE+'">'+escHtml(curlTxt)+'</div>',
           '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-curl\')">Copy</button>',
         '</div>'
       ].join('');
-    }
-
-    function escHtml(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
     ['GET','POST','PUT','DELETE'].forEach(function(m) {
@@ -871,7 +892,7 @@ window.addEventListener('load', function() {
     });
   };
 
-  /* ─── 4. Patch log row renderer ─── */
+  /* ─── 5. Patch log row renderer ─── */
   function patchLogRenderer() {
     var logsTable = document.getElementById('output-logs-table');
     if (!logsTable) return;
