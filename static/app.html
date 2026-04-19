@@ -845,6 +845,33 @@ function tryParseSpec(text) {
   if (t.charAt(0)==='{' || t.charAt(0)==='[') return JSON.parse(t);
   return parseYamlBlock(text.split('\n'), {pos:0}, 0);
 }
+function parseYamlList(lines, cursor, baseIndent) {
+  var arr = [];
+  while (cursor.pos < lines.length) {
+    var raw = lines[cursor.pos];
+    if (raw===undefined) break;
+    var stripped = raw.replace(/\r$/,'');
+    var trimmed  = stripped.trimStart();
+    if (!trimmed || trimmed.charAt(0)==='#') { cursor.pos++; continue; }
+    var indent = stripped.length - trimmed.length;
+    if (indent < baseIndent) break;
+    if (!trimmed.startsWith('- ')) break;
+    var itemVal = trimmed.slice(2).trimStart();
+    cursor.pos++;
+    if (!itemVal) {
+      // block mapping item
+      arr.push(parseYamlBlock(lines, cursor, indent+2));
+    } else if (itemVal.indexOf(':') !== -1) {
+      // inline key: value in list item — treat as object
+      var fakeLines = [Array(indent+2+1).join(' ') + itemVal];
+      var fakeCursor = {pos:0};
+      arr.push(parseYamlBlock(fakeLines, fakeCursor, indent+2));
+    } else {
+      arr.push(coerceYamlScalar(itemVal));
+    }
+  }
+  return arr;
+}
 function parseYamlBlock(lines, cursor, baseIndent) {
   var obj = {};
   while (cursor.pos < lines.length) {
@@ -862,7 +889,20 @@ function parseYamlBlock(lines, cursor, baseIndent) {
     var rest = trimmed.slice(colonIdx+1).trimStart();
     cursor.pos++;
     if (!rest || rest==='|' || rest==='>') {
-      obj[key] = parseYamlBlock(lines, cursor, indent+1);
+      // peek next line to decide: block mapping or block sequence
+      var nextRaw = lines[cursor.pos];
+      if (nextRaw !== undefined) {
+        var nextStripped = nextRaw.replace(/\r$/,'');
+        var nextTrimmed  = nextStripped.trimStart();
+        var nextIndent   = nextStripped.length - nextTrimmed.length;
+        if (nextTrimmed.startsWith('- ') && nextIndent > indent) {
+          obj[key] = parseYamlList(lines, cursor, nextIndent);
+        } else {
+          obj[key] = parseYamlBlock(lines, cursor, indent+1);
+        }
+      } else {
+        obj[key] = {};
+      }
     } else if (rest.startsWith('[')) {
       try { obj[key] = JSON.parse(rest.replace(/'/g,'"')); } catch(e) { obj[key]=[]; }
     } else {
@@ -906,7 +946,7 @@ function extractPropertiesInto(schemaNode, defs, target) {
   }
   var props = schemaNode.properties;
   if (!props) return;
-  var req = schemaNode.required || [];
+  var req = Array.isArray(schemaNode.required) ? schemaNode.required : [];
   Object.keys(props).forEach(function(field) {
     var p = resolveRef(props[field], defs);
     var type = p.type || (p['$ref'] ? 'object' : 'string');
