@@ -624,11 +624,15 @@
       </div>
       <div id="resource-sections"></div>
       <div id="step2-error" class="error-msg hidden"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-ghost" onclick="goBackToStep1()">&#8592; Back</button>
+        <button class="btn-primary" id="submit-btn" onclick="submitCreate()" style="flex:1;margin:0;">Generate Mock API</button>
+      </div>
     </div>
-    <div class="wiz-nav">
+    <div class="wiz-nav" style="display:none;">
       <button class="btn-wiz-back" onclick="wizBack(4)">← Back</button>
       <span class="wiz-nav-info">Step 4 of 4</span>
-      <button class="btn-wiz-next" id="submit-btn" onclick="wizSubmit()">Generate Mock API 🚀</button>
+      <button class="btn-wiz-next" onclick="wizSubmit()">Generate Mock API 🚀</button>
     </div>
   </div>
 
@@ -882,9 +886,8 @@ function wizGoToStep4() {
 }
 
 function wizSubmit() {
-  // Call original submitCreate, then advance to step 5 after a short delay
   if (typeof submitCreate === 'function') submitCreate();
-  setTimeout(function() { wizShow(5); }, 400);
+  setTimeout(function() { wizShow(5); }, 600);
 }
 
 function wizReset() {
@@ -1073,7 +1076,11 @@ window.addEventListener('load', function() {
 
   var orig = window.fillOutputPanel;
   if (typeof orig === 'function') {
-    window.fillOutputPanel = function(data) { orig(data); setTimeout(populateMethodCards, 80); };
+    window.fillOutputPanel = function(data) {
+      orig(data);
+      setTimeout(populateMethodCards, 80);
+      setTimeout(function() { wizShow(5); }, 300);
+    };
   }
 
   var SS = ['font-size:.62rem','line-height:1.75','white-space:pre-wrap','overflow-x:auto','background:#FFFFFF','color:#cdd6f4','border-radius:7px','padding:10px 12px','margin-bottom:8px','display:block',"font-family:'Fira Code',monospace"].join(';');
