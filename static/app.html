@@ -582,6 +582,10 @@
             <div class="tester-row">
               <select id="tester-method-select" class="select-input" onchange="onTesterMethodChange()"></select>
             </div>
+            <div id="tester-id-wrap" class="hidden" style="margin-bottom:11px;">
+              <label class="field-label-sm">Record ID (required for /&lt;id&gt; requests)</label>
+              <input type="number" id="tester-id-input" class="text-input" placeholder="e.g. 1" autocomplete="off" />
+            </div>
             <div id="tester-body-wrap" class="hidden">
               <label class="field-label-sm">Request Body (JSON)</label>
               <textarea id="tester-body" class="code-textarea" rows="4"></textarea>

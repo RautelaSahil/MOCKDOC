@@ -14,6 +14,8 @@ venv/
 # Test scripts
 verify.py
 fix.py
+test_*.py
+test_*.js
 
 # OS / editor noise
 .DS_Store

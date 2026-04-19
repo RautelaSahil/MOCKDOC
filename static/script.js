@@ -790,6 +790,7 @@ function renderOutput(data) {
   var baseUrl = window.location.origin;
   var endpoints = [
     { label: 'GET',    key: 'list',   url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'GET' },
+    { label: 'GET',    key: 'get',    url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'GET' },
     { label: 'POST',   key: 'create', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name, method: 'POST' },
     { label: 'PUT',    key: 'update', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'PUT' },
     { label: 'DELETE', key: 'delete', url: baseUrl + '/' + data.namespace + '/' + primaryResource.name + '/<id>', method: 'DELETE' }
@@ -1047,6 +1048,7 @@ function escapeHtml(value) {
 // FETCH SNIPPET
 // ============================================================
 function buildFetchSnippet(method, url, auth, schema) {
+  url = url.replace('<id>', '1');
   var mockAuthToken = auth ? auth.token : null;
   var nsToken = state.namespaceToken;
 
@@ -1126,6 +1128,7 @@ function renderFetchSnippets(data, endpoints) {
 }
 
 function buildCurl(method, url, firstRecord, auth) {
+  url = url.replace('<id>', '1');
   var parts = ['curl -X ' + method];
   var mockAuthToken = auth ? auth.token : null;
   var nsToken = state.namespaceToken;
@@ -1181,8 +1184,12 @@ function buildTester(endpoints, data) {
 function onTesterMethodChange() {
   var val = document.getElementById('tester-method-select').value;
   var method = val ? val.split('|')[0] : '';
+  var url = val ? val.split('|')[1] : '';
   var needsBody = method === 'POST' || method === 'PUT';
+  var needsId = url.includes('<id>');
   document.getElementById('tester-body-wrap').classList.toggle('hidden', !needsBody);
+  var idWrap = document.getElementById('tester-id-wrap');
+  if (idWrap) idWrap.classList.toggle('hidden', !needsId);
   document.getElementById('tester-response').classList.add('hidden');
 }
 
@@ -1197,6 +1204,22 @@ function sendTestRequest() {
   var parts = val.split('|');
   var method = parts[0];
   var url = parts[1];
+
+  if (url.includes('<id>')) {
+    var idInput = document.getElementById('tester-id-input');
+    var idVal = idInput ? idInput.value.trim() : '';
+    if (!/^\d+$/.test(idVal)) {
+      showTesterResponse(400, { error: 'Record ID must be a positive number' });
+      return;
+    }
+    url = url.replace('<id>', encodeURIComponent(idVal));
+  }
+
+  // Backup check to prevent accidental <id> leakage
+  if (url.includes('<id>')) {
+    showTesterResponse(400, { error: 'Missing or unresolved record ID in URL' });
+    return;
+  }
 
   var options = { method: method, headers: { 'Content-Type': 'application/json' } };
 
