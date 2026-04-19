@@ -723,48 +723,55 @@
   function getStateInfo() {
     var st = window.state || {};
     var ed = st.endpointData || {};
-    var baseUrl = ed.base_url || ed.baseUrl || '';
-    if (!baseUrl && ed.namespace) baseUrl = 'https://mockdock.io/api/' + ed.namespace;
-    if (!baseUrl) {
-      var ns = (document.getElementById('input-namespace')||{}).value || '';
-      if (ns) baseUrl = 'https://mockdock.io/api/' + ns;
-    }
-    var route = '';
-    if (ed.routes && ed.routes.length) route = ed.routes[0];
-    else if (st.resources && st.resources.length) route = st.resources[0].route_path || st.resources[0].route || '';
-    if (!route) route = (document.getElementById('input-route')||{}).value || '/items';
-    var endpoint = baseUrl ? baseUrl.replace(/\/$/, '') + route : route;
-    var authEnabled = !!(st.authEnabled || ((document.getElementById('auth-toggle')||{}).checked));
-    var token = '';
-    if (authEnabled) {
-      token = ed.token || ed.auth_token || (document.getElementById('input-token')||{}).value || 'mock_token';
-    }
-    var schema = ed.schema || st.schema || {};
-    if (!Object.keys(schema).length && st.resources && st.resources.length) {
-      schema = st.resources[0].schema || {};
-    }
+    // Pull the real endpoint URL directly from the DOM (set by script.js renderOutput)
+    // GET endpoint url is the base: origin/namespace/route_path
+    var getUrlEl = document.getElementById('ep-url-list');
+    var postUrlEl = document.getElementById('ep-url-create');
+    var putUrlEl = document.getElementById('ep-url-update');
+    var delUrlEl = document.getElementById('ep-url-delete');
+    var urls = {
+      GET:    getUrlEl  ? getUrlEl.textContent.trim()  : '',
+      POST:   postUrlEl ? postUrlEl.textContent.trim() : '',
+      PUT:    putUrlEl  ? putUrlEl.textContent.trim()  : '',
+      DELETE: delUrlEl  ? delUrlEl.textContent.trim()  : ''
+    };
+    // Base endpoint (GET url, no /<id>)
+    var baseEndpoint = urls.GET || '';
+    // Auth: mock token is state.auth.token (for client requests), namespaceToken is admin-only
+    var mockToken = (st.auth && st.auth.token) ? st.auth.token : '';
+    var nsToken = st.namespaceToken || '';
+    // Schema for body building
+    var schema = {};
+    if (st.resources && st.resources.length) schema = st.resources[0].schema || {};
     var bodyObj = {};
     Object.keys(schema).forEach(function(k) {
-      var t = (typeof schema[k] === 'object' ? schema[k].type : schema[k]) || 'string';
+      var def = schema[k];
+      var t = (typeof def === 'object' && def !== null) ? (def.type || 'string') : (def || 'string');
       if (t === 'number' || t === 'integer') bodyObj[k] = 1;
       else if (t === 'boolean') bodyObj[k] = true;
+      else if (def && def.enum && def.enum.length) bodyObj[k] = def.enum[0];
+      else if (def && def.format === 'email') bodyObj[k] = 'user@example.com';
       else bodyObj[k] = k + '_value';
     });
     if (!Object.keys(bodyObj).length) bodyObj = { field: 'value' };
-    return { endpoint: endpoint, token: token, bodyObj: bodyObj, authEnabled: authEnabled };
+    return { urls: urls, baseEndpoint: baseEndpoint, mockToken: mockToken, nsToken: nsToken, bodyObj: bodyObj };
   }
 
   function buildCurlSnippet(method, url) {
     var info = getStateInfo();
-    var base = (url || info.endpoint || '/api/resource').replace(/\/$/, '');
-    var authHeader = info.authEnabled && info.token
-      ? ' \\\n  -H "Authorization: Bearer ' + info.token + '"'
-      : '';
+    // Use URL from DOM if available (most accurate), else fallback to passed url
+    var base = (info.urls[method] || url || info.baseEndpoint || '/api/resource').replace(/\/$/, '');
     var bodyStr = JSON.stringify(info.bodyObj);
-    if (method==='GET')    return 'curl -X GET "' + base + '" \\\n  -H "Content-Type: application/json"' + authHeader;
-    if (method==='POST')   return 'curl -X POST "' + base + '" \\\n  -H "Content-Type: application/json"' + authHeader + ' \\\n  -d \'' + bodyStr + '\'';
-    if (method==='PUT')    return 'curl -X PUT "' + base + '/{id}" \\\n  -H "Content-Type: application/json"' + authHeader + ' \\\n  -d \'' + bodyStr + '\'';
-    if (method==='DELETE') return 'curl -X DELETE "' + base + '/{id}" \\\n  -H "Content-Type: application/json"' + authHeader;
+    // Auth logic matching script.js buildCurl:
+    // GET uses mock auth token (state.auth.token) — what clients send
+    // POST/PUT/DELETE use namespace owner token (state.namespaceToken)
+    var getAuth  = info.mockToken ? ' \\\n  -H "Authorization: Bearer ' + info.mockToken + '"' : '';
+    var mutAuth  = info.nsToken   ? ' \\\n  -H "Authorization: Bearer ' + info.nsToken + '"'   :
+                   info.mockToken ? ' \\\n  -H "Authorization: Bearer ' + info.mockToken + '"' : '';
+    if (method==='GET')    return 'curl -X GET "' + base + '" \\\n  -H "Content-Type: application/json"' + getAuth;
+    if (method==='POST')   return 'curl -X POST "' + base + '" \\\n  -H "Content-Type: application/json"' + mutAuth + ' \\\n  -d \'' + bodyStr + '\'';
+    if (method==='PUT')    return 'curl -X PUT "' + base + '" \\\n  -H "Content-Type: application/json"' + mutAuth + ' \\\n  -d \'' + bodyStr + '\'';
+    if (method==='DELETE') return 'curl -X DELETE "' + base + '" \\\n  -H "Content-Type: application/json"' + mutAuth;
     return '';
   }
 
@@ -829,7 +836,7 @@
       var el = document.getElementById('oc-'+m.toLowerCase()+'-content');
       if (!el) return;
       var ep = eps.find(function(e){ return e.method === m; });
-      var url = ep ? ep.url : getStateInfo().endpoint;
+      var url = ep ? ep.url : (getStateInfo().urls[m] || getStateInfo().baseEndpoint);
       var ft = fetchMap[m] || '';
       el.innerHTML = renderTabbed(m, url, ft, buildCurlSnippet(m, url));
     });
