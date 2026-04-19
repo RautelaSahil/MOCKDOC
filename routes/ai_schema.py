@@ -135,6 +135,10 @@ def call_groq_records(resource_name: str, schema: dict) -> list:
         ).strip()
 
     records = json.loads(raw_text)
+    
+    if isinstance(records, dict):
+        records = [records]
+        
     if not isinstance(records, list) or len(records) == 0:
         raise ValueError("AI returned an empty or invalid records array")
 

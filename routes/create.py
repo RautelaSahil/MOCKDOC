@@ -10,6 +10,8 @@ from db import (
     insert_resource,
     insert_schema_json,
     is_slug_available,
+    normalize_schema,
+    validate,
 )
 
 create_bp = Blueprint("create", __name__)
@@ -46,40 +48,50 @@ def validate_request(body):
         if not isinstance(schema, dict) or len(schema) == 0:
             return f"resource {index + 1}: schema must have at least one field"
 
-        for field_name, field_def in schema.items():
-            if isinstance(field_def, str):
-                if field_def not in VALID_TYPES:
-                    return (
-                        f"resource {index + 1}: field '{field_name}' has invalid type "
-                        f"'{field_def}'. Must be one of: string, integer, number, boolean"
-                    )
-            elif isinstance(field_def, dict):
-                if "enum" in field_def:
-                    enum_vals = field_def["enum"]
-                    if not isinstance(enum_vals, list) or len(enum_vals) == 0 or not all(
-                        isinstance(v, str) for v in enum_vals
-                    ):
+        # New JSON-Schema style (type:object / type:array at root) — trust the
+        # recursive validator to catch any mistakes at record-creation time.
+        if schema.get("type") not in (None, "object", "array"):
+            return (
+                f"resource {index + 1}: top-level schema 'type' must be "
+                f"'object' or 'array' if provided"
+            )
+
+        # Legacy flat schema — validate each field definition individually.
+        if schema.get("type") is None:
+            for field_name, field_def in schema.items():
+                if isinstance(field_def, str):
+                    if field_def not in VALID_TYPES:
                         return (
-                            f"resource {index + 1}: field '{field_name}' enum must be "
-                            f"a non-empty list of strings"
+                            f"resource {index + 1}: field '{field_name}' has invalid type "
+                            f"'{field_def}'. Must be one of: string, integer, number, boolean"
                         )
-                elif "type" in field_def and "format" in field_def:
-                    if field_def["type"] != "string" or field_def["format"] != "email":
+                elif isinstance(field_def, dict):
+                    if "enum" in field_def:
+                        enum_vals = field_def["enum"]
+                        if not isinstance(enum_vals, list) or len(enum_vals) == 0 or not all(
+                            isinstance(v, str) for v in enum_vals
+                        ):
+                            return (
+                                f"resource {index + 1}: field '{field_name}' enum must be "
+                                f"a non-empty list of strings"
+                            )
+                    elif "type" in field_def and "format" in field_def:
+                        if field_def["type"] != "string" or field_def["format"] != "email":
+                            return (
+                                f"resource {index + 1}: field '{field_name}' object schema "
+                                f"must have type 'string' and format 'email'"
+                            )
+                    else:
                         return (
-                            f"resource {index + 1}: field '{field_name}' object schema "
-                            f"must have type 'string' and format 'email'"
+                            f"resource {index + 1}: field '{field_name}' has unrecognised "
+                            f"schema shape — use a type string, an enum object, or a "
+                            f"type/format object"
                         )
                 else:
                     return (
-                        f"resource {index + 1}: field '{field_name}' has unrecognised "
-                        f"schema shape — use a type string, an enum object, or a "
-                        f"type/format object"
+                        f"resource {index + 1}: field '{field_name}' schema definition "
+                        f"must be a string or object"
                     )
-            else:
-                return (
-                    f"resource {index + 1}: field '{field_name}' schema definition "
-                    f"must be a string or object"
-                )
 
         records = resource.get("records")
         if not isinstance(records, list) or len(records) == 0:
@@ -147,17 +159,20 @@ def create():
     coerced_resources = []
     for resource_index, resource in enumerate(resources):
         schema = resource["schema"]
+        normalized = normalize_schema(schema)
         coerced_records = []
         for record_index, record in enumerate(resource["records"]):
-            coerced, err = coerce_record(record, schema)
-            if err:
+            ok, err = validate(record, normalized)
+            if not ok:
                 return jsonify({"error": f"resource {resource_index + 1}, record {record_index + 1}: {err}"}), 400
-            coerced_records.append(coerced)
+            coerced_records.append(record)
 
         coerced_resources.append({
             "name": resource["name"].strip(),
             "route_path": resource["route_path"].strip(),
-            "schema": schema,
+            # Store canonical (normalized) form so the DB always holds
+            # JSON-Schema-style objects — avoids re-normalization on every request.
+            "schema": normalized,
             "records": coerced_records,
         })
 

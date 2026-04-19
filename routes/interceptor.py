@@ -31,9 +31,84 @@ def build_interceptor_js(route_map, auth_config):
   var _originalFetch = window.fetch.bind(window);
   var _routeMap = {route_map_json};
   var _authConfig = {auth_config_json};
+  var STRICT_MODE = false;
 
   // In-memory store for records added during this session via POST
   var _sessionRecords = {{}};
+
+  function _validateSoft(data, schema, path, depth) {{
+    path = path || [];
+    depth = depth || 0;
+    
+    // Limits recursion depth and skips if no schema
+    if (depth > 3 || !schema) return {{ ok: true }};
+
+    var t = schema.type;
+    
+    if (t === 'object') {{
+      if (typeof data !== 'object' || data === null || Array.isArray(data)) {{
+        return {{ ok: false, err: (path.join('.') || 'root') + ': expected object' }};
+      }}
+      var props = schema.properties || {{}};
+      var req = schema.required || [];
+      for (var i = 0; i < req.length; i++) {{
+        if (!(req[i] in data)) {{
+          return {{ ok: false, err: path.concat([req[i]]).join('.') + ': field is required' }};
+        }}
+      }}
+      for (var key in data) {{
+        if (!props.hasOwnProperty(key)) {{
+          return {{ ok: false, err: path.concat([key]).join('.') + ': unknown field' }};
+        }}
+      }}
+      for (var key in data) {{
+        var res = _validateSoft(data[key], props[key], path.concat([key]), depth + 1);
+        if (!res.ok) return res;
+      }}
+      return {{ ok: true }};
+    }}
+
+    if (t === 'array') {{
+      if (!Array.isArray(data)) {{
+        return {{ ok: false, err: (path.join('.') || 'root') + ': expected array' }};
+      }}
+      var itemsSchema = schema.items;
+      if (itemsSchema) {{
+        var limit = Math.min(data.length, 5); // validate first 5 items only
+        for (var i = 0; i < limit; i++) {{
+          var res = _validateSoft(data[i], itemsSchema, path.concat([String(i)]), depth + 1);
+          if (!res.ok) return res;
+        }}
+      }}
+      return {{ ok: true }};
+    }}
+
+    if (t === 'string') {{
+      if (typeof data !== 'string') return {{ ok: false, err: path.join('.') + ': expected string' }};
+      if (schema.format === 'email') {{
+        var re = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/;
+        if (!re.test(data)) return {{ ok: false, err: path.join('.') + ': invalid email' }};
+      }}
+      if (schema.enum && schema.enum.indexOf(data) === -1) {{
+        return {{ ok: false, err: path.join('.') + ': invalid enum value' }};
+      }}
+      return {{ ok: true }};
+    }}
+
+    if (t === 'integer') {{
+      if (typeof data !== 'number' || !Number.isInteger(data)) {{
+        return {{ ok: false, err: path.join('.') + ': expected integer' }};
+      }}
+      return {{ ok: true }};
+    }}
+
+    if (t === 'boolean') {{
+      if (typeof data !== 'boolean') return {{ ok: false, err: path.join('.') + ': expected boolean' }};
+      return {{ ok: true }};
+    }}
+
+    return {{ ok: true }};
+  }}
 
   function _extractPath(url) {{
     try {{
@@ -90,6 +165,17 @@ def build_interceptor_js(route_map, auth_config):
         var body = {{}};
         try {{ body = JSON.parse((init && init.body) || '{{}}'); }} catch(e) {{}}
 
+        var schema = _routeMap[path].schema;
+        var val = _validateSoft(body, schema);
+        if (!val.ok) {{
+          if (STRICT_MODE) {{
+            return Promise.reject({{ error: "validation failed: " + val.err }});
+          }} else {{
+            console.warn("MockDock validation warning:", val.err);
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('mockdock-warning', {{detail: val.err}}));
+          }}
+        }}
+
         var sessionId = 'session_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
         body.id = sessionId;
 
@@ -125,6 +211,18 @@ def build_interceptor_js(route_map, auth_config):
         if (method === 'PUT') {{
           var putBody = {{}};
           try {{ putBody = JSON.parse((init && init.body) || '{{}}'); }} catch(e) {{}}
+          
+          var schema = _routeMap[matchedBase].schema;
+          var val = _validateSoft(putBody, schema);
+          if (!val.ok) {{
+            if (STRICT_MODE) {{
+              return Promise.reject({{ error: "validation failed: " + val.err }});
+            }} else {{
+              console.warn("MockDock validation warning:", val.err);
+              if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('mockdock-warning', {{detail: val.err}}));
+            }}
+          }}
+
           putBody.id = recordId;
           return Promise.resolve(_mockResponse(putBody));
         }}

@@ -14,6 +14,7 @@ from db import (
     insert_records,
     reset_records,
     update_record,
+    validate,
 )
 
 mock_bp = Blueprint("mock", __name__)
@@ -76,53 +77,8 @@ def check_ownership(ns):
     return None
 
 
-def _is_valid_email(value):
-    if not isinstance(value, str) or "@" not in value:
-        return False
-    _, _, domain = value.partition("@")
-    return "." in domain
-
-
-def validate_and_coerce(data: dict, schema: dict):
-    coerced = {}
-    for field_name, field_def in schema.items():
-        value = data.get(field_name)
-        if value is None:
-            return None, f"field '{field_name}' is required"
-
-        if isinstance(field_def, str):
-            if field_def == "string":
-                coerced[field_name] = str(value)
-            elif field_def == "integer":
-                if not isinstance(value, int) or isinstance(value, bool):
-                    return None, f"field '{field_name}' expects integer"
-                coerced[field_name] = value
-            elif field_def == "number":
-                if not isinstance(value, (int, float)) or isinstance(value, bool):
-                    return None, f"field '{field_name}' expects number"
-                coerced[field_name] = value
-            elif field_def == "boolean":
-                if not isinstance(value, bool):
-                    return None, f"field '{field_name}' expects boolean"
-                coerced[field_name] = value
-            # unknown plain type: skip silently
-        elif isinstance(field_def, dict):
-            if "enum" in field_def:
-                allowed = field_def["enum"]
-                if not isinstance(value, str) or value not in allowed:
-                    return None, f"field '{field_name}' must be one of: {', '.join(allowed)}"
-                coerced[field_name] = value
-            elif "type" in field_def and "format" in field_def:
-                if not _is_valid_email(value):
-                    return None, f"field '{field_name}' expects a valid email address"
-                coerced[field_name] = value
-            # unknown dict shape: skip silently
-
-    for field_name in data.keys():
-        if field_name not in schema:
-            return None, f"field '{field_name}' is not defined in schema"
-
-    return coerced, None
+# validate_and_coerce removed — normalize_schema() + validate() from db.py
+# handle both legacy flat schemas and new nested JSON-Schema-style schemas.
 
 
 @mock_bp.route("/<slug>/<resource_name>", methods=["GET"])
@@ -196,13 +152,13 @@ def create_record(slug, resource_name):
     if not schema:
         return jsonify({"error": "schema not found"}), 404
 
-    coerced, error = validate_and_coerce(body, schema)
-    if error is not None:
+    # Schema in DB is always canonical (normalized at create time; migrated for
+    # legacy rows). Pass directly to validate() — no runtime normalization needed.
+    ok, error = validate(body, schema)
+    if not ok:
         return jsonify({"error": error}), 400
-    if coerced is None:
-        return jsonify({"error": "validation failed"}), 400
 
-    insert_records(resource["id"], [coerced])
+    insert_records(resource["id"], [body])
     all_records = get_records(resource["id"])
     if not all_records:
         return jsonify({"error": "failed to retrieve new record"}), 500
@@ -243,13 +199,13 @@ def update_record_route(slug, resource_name, record_id):
     if not schema:
         return jsonify({"error": "schema not found"}), 404
 
-    coerced, error = validate_and_coerce(body, schema)
-    if error is not None:
+    # Schema in DB is always canonical (normalized at create time; migrated for
+    # legacy rows). Pass directly to validate() — no runtime normalization needed.
+    ok, error = validate(body, schema)
+    if not ok:
         return jsonify({"error": error}), 400
-    if coerced is None:
-        return jsonify({"error": "validation failed"}), 400
 
-    update_record(resource["id"], record_id, coerced)
+    update_record(resource["id"], record_id, body)
     updated = get_record_by_id(resource["id"], record_id)
     return jsonify(updated), 200
 

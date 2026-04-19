@@ -40,9 +40,59 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ============================================================
+// VALIDATION ERRORS UI LOGIC
+// ============================================================
+var _validationErrors = [];
+var _validationWarnings = [];
+
+function parseErrorString(errStr) {
+  var parts = errStr.split(': ');
+  if (parts.length < 2) return { path: [], message: errStr };
+  return {
+    path: parts[0].split('.'),
+    message: parts.slice(1).join(': ')
+  };
+}
+
+function updateParseStatusUI() {
+  var el = document.getElementById('json-parse-status');
+  if (!el) return;
+  
+  if (_validationErrors.length === 0 && _validationWarnings.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+  
+  var html = '';
+  _validationErrors.forEach(function(e) {
+    var p = parseErrorString(e);
+    html += '<div style="color:var(--red); font-family:var(--mono); margin-bottom:4px;">&#10060; <strong>' + escapeHtml(p.path.join('.')) + ':</strong> ' + escapeHtml(p.message) + '</div>';
+  });
+  
+  _validationWarnings.forEach(function(w) {
+    var p = parseErrorString(w);
+    html += '<div style="color:var(--amb); font-family:var(--mono); margin-bottom:4px;">&#9888;&#65039; <strong>' + escapeHtml(p.path.join('.')) + ':</strong> ' + escapeHtml(p.message) + '</div>';
+  });
+  
+  el.innerHTML = html;
+}
+
+window.addEventListener('mockdock-warning', function(e) {
+  _validationWarnings.push(e.detail);
+  updateParseStatusUI();
+});
+
+// ============================================================
 // SCHEMA VALIDATION
 // ============================================================
 var VALID_PLAIN_TYPES = ['string', 'integer', 'number', 'boolean'];
+
+function getSchemaProperties(schema) {
+  if (!schema) return {};
+  if (schema.type === 'object' && schema.properties) return schema.properties;
+  if (schema.type === 'array' && schema.items && schema.items.type === 'object' && schema.items.properties) return schema.items.properties;
+  return schema;
+}
 
 function getSchema() {
   var raw = document.getElementById('schema-json-input').value.trim();
@@ -58,9 +108,9 @@ function getSchema() {
   try {
     parsed = JSON.parse(raw);
   } catch (e) {
-    statusEl.textContent = '??? Invalid JSON: ' + e.message;
+    statusEl.textContent = '❌ Invalid JSON: ' + e.message;
     statusEl.style.color = 'var(--red)';
-    showStep1Error('Schema: invalid JSON ??? ' + e.message);
+    showStep1Error('Schema: invalid JSON — ' + e.message);
     return null;
   }
 
@@ -73,6 +123,13 @@ function getSchema() {
   if (keys.length === 0) {
     showStep1Error('Schema must have at least one field.');
     return null;
+  }
+
+  // Support canonical recursive JSON-Schema bypass
+  if (parsed.type === 'object' || parsed.type === 'array') {
+    statusEl.textContent = '✔️ Valid';
+    statusEl.style.color = 'var(--green)';
+    return parsed;
   }
 
   for (var i = 0; i < keys.length; i++) {
@@ -129,8 +186,13 @@ function getRecordsForIndex(index) {
   try {
     parsed = JSON.parse(raw);
   } catch (e) {
-    showStep2Error('Resource ' + (index + 1) + ': invalid JSON ??? ' + e.message);
+    showStep2Error('Resource ' + (index + 1) + ': invalid JSON — ' + e.message);
     return null;
+  }
+
+  // Gracefully wrap a single object into an array
+  if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+    parsed = [parsed];
   }
 
   if (!Array.isArray(parsed) || parsed.length === 0) {
@@ -525,11 +587,12 @@ function buildStep2() {
     // Schema summary
     var summary = document.createElement('div');
     summary.className = 'step2-schema-summary';
+    var props = getSchemaProperties(res.schema);
     summary.innerHTML =
       '<strong style="color:var(--accent);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em">Schema</strong><br>' +
-      Object.keys(res.schema).map(function (fn) {
-        return schemaFieldLabel(fn, res.schema[fn]);
-      }).join(' &nbsp;??&nbsp; ');
+      Object.keys(props).map(function (fn) {
+        return schemaFieldLabel(fn, props[fn]);
+      }).join(' &nbsp;•&nbsp; ');
     section.appendChild(summary);
 
     // Records label row with AI button
@@ -563,8 +626,11 @@ function buildStep2() {
 
     // Example record placeholder
     var exampleRecord = {};
-    Object.keys(res.schema).forEach(function (fn) {
-      exampleRecord[fn] = exampleValueForField(res.schema[fn]);
+    var props = getSchemaProperties(res.schema);
+    Object.keys(props).forEach(function (fn) {
+      if (fn !== 'type' && fn !== 'properties') {
+         exampleRecord[fn] = exampleValueForField(props[fn]);
+      }
     });
     var placeholder = JSON.stringify([exampleRecord], null, 2);
 
@@ -668,9 +734,9 @@ function renderOutput(data) {
   // Script tag
   document.getElementById('output-script-tag').textContent = data.interceptor_tag;
 
-  // Schema summary ??? use first resource's schema from state
+  // Schema summary — use first resource's schema from state
   var schemaEl = document.getElementById('output-schema-summary');
-  var schemaToRender = state.resources.length > 0 ? state.resources[0].schema : {};
+  var schemaToRender = state.resources.length > 0 ? getSchemaProperties(state.resources[0].schema) : {};
   schemaEl.innerHTML = Object.keys(schemaToRender).map(function (fieldName) {
     var chip = schemaChipLabel(fieldName, schemaToRender[fieldName]);
     return '<span class="schema-chip">' + escapeHtml(chip.name) +
@@ -730,7 +796,7 @@ function renderOutput(data) {
   ];
 
   // Build example body from first resource schema
-  var firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
+  var firstSchema = state.resources.length > 0 ? getSchemaProperties(state.resources[0].schema) : {};
   var firstRecord = {};
   Object.keys(firstSchema).forEach(function (fn) {
     firstRecord[fn] = exampleValueForField(firstSchema[fn]);
@@ -996,8 +1062,9 @@ function buildFetchSnippet(method, url, auth, schema) {
   if (method === 'POST' || method === 'PUT') {
     var exampleBody = {};
     if (schema) {
-      Object.keys(schema).forEach(function (fn) {
-        exampleBody[fn] = exampleValueForField(schema[fn]);
+      var props = getSchemaProperties(schema);
+      Object.keys(props).forEach(function (fn) {
+        exampleBody[fn] = exampleValueForField(props[fn]);
       });
     }
     var bodyStr = JSON.stringify(exampleBody, null, 2)
@@ -1095,7 +1162,7 @@ function buildTester(endpoints, data) {
 
   // Build example body from first resource schema
   var bodyInput = document.getElementById('tester-body');
-  var firstSchema = state.resources.length > 0 ? state.resources[0].schema : {};
+  var firstSchema = state.resources.length > 0 ? getSchemaProperties(state.resources[0].schema) : {};
   var exampleBody = {};
   Object.keys(firstSchema).forEach(function (fn) {
     exampleBody[fn] = exampleValueForField(firstSchema[fn]);
@@ -1120,6 +1187,10 @@ function onTesterMethodChange() {
 }
 
 function sendTestRequest() {
+  _validationErrors = [];
+  _validationWarnings = [];
+  updateParseStatusUI();
+
   var val = document.getElementById('tester-method-select').value;
   if (!val) return;
 
@@ -1158,6 +1229,12 @@ function sendTestRequest() {
       return res.json().then(function (data) { return { status: status, data: data }; });
     })
     .then(function (res) {
+      if (res.status >= 400 && res.data && res.data.error) {
+        if (typeof res.data.error === 'string') {
+          _validationErrors.push(res.data.error);
+          updateParseStatusUI();
+        }
+      }
       showTesterResponse(res.status, res.data);
     })
     .catch(function (err) {

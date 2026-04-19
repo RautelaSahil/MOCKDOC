@@ -381,6 +381,89 @@ def get_schema_json(resource_id):
     return json.loads(raw)
 
 
+def normalize_schema(schema: dict) -> dict:
+    """Upgrade a legacy flat schema {"name": "string"} to JSON Schema style.
+
+    New-style schemas that already carry ``"type": "object"`` at the top level
+    are returned unchanged, so this is safe to call on every schema read.
+    """
+    if schema.get("type") == "object":
+        return schema
+    return {
+        "type": "object",
+        "properties": {
+            k: {"type": v} if isinstance(v, str) else v
+            for k, v in schema.items()
+        },
+        "required": [],
+    }
+
+
+def validate(data, schema: dict, path=None):
+    """Recursively validate *data* against a JSON-Schema-style *schema*.
+
+    Returns ``(True, None)`` on success, or ``(False, message)`` on the first
+    failure. Error messages use dot-notation paths, e.g.::
+
+        address.city: expected string
+        tags.[0]: expected string
+    """
+    if path is None:
+        path = []
+    t = schema.get("type")
+
+    if t == "object":
+        if not isinstance(data, dict):
+            return False, f'{".".join(path) or "root"}: expected object'
+        props = schema.get("properties", {})
+        required = schema.get("required", [])
+        for key in required:
+            if key not in data:
+                return False, f'{".".join(path + [key])}: field is required'
+        for key in data:
+            if key not in props:
+                return False, f'{".".join(path + [key])}: unknown field'
+        for key, value in data.items():
+            ok, err = validate(value, props[key], path + [key])
+            if not ok:
+                return False, err
+        return True, None
+
+    if t == "array":
+        if not isinstance(data, list):
+            return False, f'{".".join(path) or "root"}: expected array'
+        items_schema = schema.get("items")
+        if items_schema:
+            for i, item in enumerate(data):
+                ok, err = validate(item, items_schema, path + [str(i)])
+                if not ok:
+                    return False, err
+        return True, None
+
+    if t == "string":
+        if not isinstance(data, str):
+            return False, f'{".".join(path)}: expected string'
+        if schema.get("format") == "email":
+            import re
+            if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", data):
+                return False, f'{".".join(path)}: invalid email'
+        if "enum" in schema and data not in schema["enum"]:
+            return False, f'{".".join(path)}: invalid enum value'
+        return True, None
+
+    if t == "integer":
+        if not isinstance(data, int) or isinstance(data, bool):
+            return False, f'{".".join(path)}: expected integer'
+        return True, None
+
+    if t == "boolean":
+        if not isinstance(data, bool):
+            return False, f'{".".join(path)}: expected boolean'
+        return True, None
+
+    return False, f'{".".join(path)}: unsupported type "{t}"'
+
+
 def insert_records(resource_id, records: list):
     conn = get_connection()
     for record in records:
