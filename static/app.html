@@ -866,25 +866,6 @@ function wizNext(from) {
 
 function wizBack(from) { wizShow(from - 1); }
 
-function wizGoToStep4() {
-  // Trigger schema validation that goToStep2() normally does, then go to step 4
-  if (typeof goToStep2 === 'function') {
-    // intercept — we override the show-output-panel behaviour below
-    var errEl = document.getElementById('step1-error-card3');
-    var schema = document.getElementById('schema-json-input').value.trim();
-    if (!schema) {
-      if(errEl){ errEl.textContent='Please enter a schema.'; errEl.classList.remove('hidden'); }
-      return;
-    }
-    try { JSON.parse(schema); } catch(e) {
-      if(errEl){ errEl.textContent='Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); }
-      return;
-    }
-    if(errEl) errEl.classList.add('hidden');
-  }
-  wizShow(4);
-}
-
 function wizSubmit() {
   if (typeof submitCreate === 'function') submitCreate();
   setTimeout(function() { wizShow(5); }, 600);
@@ -901,17 +882,29 @@ function wizReset() {
   var op = document.getElementById('output-panel'); if(op) op.classList.add('hidden');
 }
 
-/* Override goToStep2 to stay in wizard (schema card calls it via Generate button).
-   The button is now replaced by the wizard Next, but goToStep2 may still be called
-   internally by script.js — let it run its logic, we just don't let it scroll. */
-var _origGoToStep2 = window.goToStep2;
-window.goToStep2 = function() {
-  if (typeof _origGoToStep2 === 'function') _origGoToStep2();
-  // don't advance wizard here — wizard nav controls that
-};
-
 /* goBackToStep1 — used inside seed card by script.js */
 window.goBackToStep1 = function() { wizShow(3); };
+
+/* wizGoToStep4: called by Step 3 Next button.
+   Calls goToStep2() from script.js (which builds seed rows + AI buttons),
+   then advances wizard to step 4. */
+function wizGoToStep4() {
+  var errEl = document.getElementById('step1-error-card3');
+  var schema = (document.getElementById('schema-json-input') || {}).value || '';
+  schema = schema.trim();
+  if (!schema) {
+    if (errEl) { errEl.textContent = 'Please enter a schema.'; errEl.classList.remove('hidden'); }
+    return;
+  }
+  try { JSON.parse(schema); } catch(e) {
+    if (errEl) { errEl.textContent = 'Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); }
+    return;
+  }
+  if (errEl) errEl.classList.add('hidden');
+  // Call script.js goToStep2 which populates #resource-sections with seed rows + AI buttons
+  if (typeof goToStep2 === 'function') goToStep2();
+  wizShow(4);
+}
 </script>
 
 <!-- ═══════════════════════════════════════════════════════
