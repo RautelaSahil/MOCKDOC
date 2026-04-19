@@ -287,9 +287,9 @@
     .schema-panel.active { display: block; animation: stepIn .25s ease; }
 
     /* SWAGGER */
-    .swagger-textarea { width: 100%; background: #FFFFFF; border: none; border-radius: 8px; padding: 10px 12px; color: #cdd6f4; font-family: var(--m); font-size: .68rem; line-height: 1.8; resize: vertical; outline: none; min-height: 130px; }
+    .swagger-textarea { width: 100%; background: #1e1e2e; border: none; border-radius: 8px; padding: 10px 12px; color: #cdd6f4; font-family: var(--m); font-size: .68rem; line-height: 1.8; resize: vertical; outline: none; min-height: 130px; }
     .swagger-textarea:focus { box-shadow: 0 0 0 2.5px rgba(156,141,212,.4); }
-    .swagger-textarea::placeholder { color: #4a4a6a; }
+    .swagger-textarea::placeholder { color: #585878; }
     .swagger-parse-btn { width: 100%; background: rgba(156,141,212,.12); border: 1.5px solid rgba(156,141,212,.3); color: var(--purple); padding: 8px 14px; border-radius: 8px; font-family: var(--f); font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 7px; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .swagger-parse-btn:hover { background: rgba(156,141,212,.22); }
     .swagger-parse-btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -604,7 +604,7 @@
     <div class="wiz-nav">
       <button class="btn-wiz-back" onclick="wizBack(3)">← Back</button>
       <span class="wiz-nav-info">Step 3 of 4</span>
-      <button class="btn-wiz-next" onclick="wizGoToStep4()">Next →</button>
+      <button class="btn-wiz-next" onclick="wizGoToStep4()">Generate &amp; Seed →</button>
     </div>
   </div>
 
@@ -626,7 +626,7 @@
       <div id="step2-error" class="error-msg hidden"></div>
       <div style="display:flex;gap:8px;margin-top:12px;">
         <button class="btn-ghost" onclick="goBackToStep1()">&#8592; Back</button>
-        <button class="btn-primary" id="submit-btn" onclick="submitCreate()" style="flex:1;margin:0;">Generate Mock API</button>
+        <button class="btn-primary" id="submit-btn" onclick="submitCreate();setTimeout(function(){wizShow(5);},500);" style="flex:1;margin:0;">Generate Mock API</button>
       </div>
     </div>
     <div class="wiz-nav" style="display:none;">
@@ -889,21 +889,17 @@ window.goBackToStep1 = function() { wizShow(3); };
    Calls goToStep2() from script.js (which builds seed rows + AI buttons),
    then advances wizard to step 4. */
 function wizGoToStep4() {
+  // goToStep2 is defined in script.js — it validates, builds seed rows with AI buttons,
+  // and populates #resource-sections. We call it then advance wizard to step 4.
+  if (typeof goToStep2 === 'function') {
+    goToStep2();
+  }
+  // Check if goToStep2 showed an error (step-1-schema still visible = error)
   var errEl = document.getElementById('step1-error-card3');
-  var schema = (document.getElementById('schema-json-input') || {}).value || '';
-  schema = schema.trim();
-  if (!schema) {
-    if (errEl) { errEl.textContent = 'Please enter a schema.'; errEl.classList.remove('hidden'); }
-    return;
+  var hasErr = errEl && !errEl.classList.contains('hidden') && errEl.textContent.trim();
+  if (!hasErr) {
+    wizShow(4);
   }
-  try { JSON.parse(schema); } catch(e) {
-    if (errEl) { errEl.textContent = 'Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); }
-    return;
-  }
-  if (errEl) errEl.classList.add('hidden');
-  // Call script.js goToStep2 which populates #resource-sections with seed rows + AI buttons
-  if (typeof goToStep2 === 'function') goToStep2();
-  wizShow(4);
 }
 </script>
 
@@ -1076,7 +1072,7 @@ window.addEventListener('load', function() {
     };
   }
 
-  var SS = ['font-size:.62rem','line-height:1.75','white-space:pre-wrap','overflow-x:auto','background:#FFFFFF','color:#cdd6f4','border-radius:7px','padding:10px 12px','margin-bottom:8px','display:block',"font-family:'Fira Code',monospace"].join(';');
+  var SS = ['font-size:.62rem','line-height:1.75','white-space:pre-wrap','overflow-x:auto','background:#1e1e2e','color:#cdd6f4','border-radius:7px','padding:10px 12px','margin-bottom:8px','display:block',"font-family:'Fira Code',monospace"].join(';');
   function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function buildCurl(method, url, ft) {
     var m = ft && ft.match(/Bearer ([a-zA-Z0-9_]+)/);
