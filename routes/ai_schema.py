@@ -11,7 +11,7 @@ GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = """You are a JSON schema generator for a mock REST API tool called MockDock.
-Given a description of a resource, return ONLY a valid JSON object JSON inside JSON is not applicable at all cost ,(no markdown, no explanation) 
+Given a description of a resource, return ONLY a valid JSON object JSON inside JSON is not applicable(NESTED SCHEMA NOT ALLOWED) at all cost ,(no markdown, no explanation) 
 that represents a MockDock schema. 
 
 MockDock schema rules:
@@ -89,6 +89,7 @@ MockDock schema types:
 - {"type":"string","format":"email"} → a realistic email address
 
 Rules:
+- ID must always be integer
 - Every record must have every field from the schema
 - Values must be realistic and varied (not all zeros or empty strings)
 - Return ONLY the raw JSON array. No backticks, no explanation, no extra text."""
@@ -135,6 +136,10 @@ def call_groq_records(resource_name: str, schema: dict) -> list:
         ).strip()
 
     records = json.loads(raw_text)
+    
+    if isinstance(records, dict):
+        records = [records]
+        
     if not isinstance(records, list) or len(records) == 0:
         raise ValueError("AI returned an empty or invalid records array")
 
