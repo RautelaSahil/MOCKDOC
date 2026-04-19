@@ -720,12 +720,51 @@
 
   function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+  function getStateInfo() {
+    var st = window.state || {};
+    var ed = st.endpointData || {};
+    var baseUrl = ed.base_url || ed.baseUrl || '';
+    if (!baseUrl && ed.namespace) baseUrl = 'https://mockdock.io/api/' + ed.namespace;
+    if (!baseUrl) {
+      var ns = (document.getElementById('input-namespace')||{}).value || '';
+      if (ns) baseUrl = 'https://mockdock.io/api/' + ns;
+    }
+    var route = '';
+    if (ed.routes && ed.routes.length) route = ed.routes[0];
+    else if (st.resources && st.resources.length) route = st.resources[0].route_path || st.resources[0].route || '';
+    if (!route) route = (document.getElementById('input-route')||{}).value || '/items';
+    var endpoint = baseUrl ? baseUrl.replace(/\/$/, '') + route : route;
+    var authEnabled = !!(st.authEnabled || ((document.getElementById('auth-toggle')||{}).checked));
+    var token = '';
+    if (authEnabled) {
+      token = ed.token || ed.auth_token || (document.getElementById('input-token')||{}).value || 'mock_token';
+    }
+    var schema = ed.schema || st.schema || {};
+    if (!Object.keys(schema).length && st.resources && st.resources.length) {
+      schema = st.resources[0].schema || {};
+    }
+    var bodyObj = {};
+    Object.keys(schema).forEach(function(k) {
+      var t = (typeof schema[k] === 'object' ? schema[k].type : schema[k]) || 'string';
+      if (t === 'number' || t === 'integer') bodyObj[k] = 1;
+      else if (t === 'boolean') bodyObj[k] = true;
+      else bodyObj[k] = k + '_value';
+    });
+    if (!Object.keys(bodyObj).length) bodyObj = { field: 'value' };
+    return { endpoint: endpoint, token: token, bodyObj: bodyObj, authEnabled: authEnabled };
+  }
+
   function buildCurlSnippet(method, url) {
-    var base = url || '/api/resource';
-    if (method==='GET')    return 'curl -X GET "'+base+'" \\\n  -H "Content-Type: application/json"';
-    if (method==='POST')   return 'curl -X POST "'+base+'" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"value"}\'';
-    if (method==='PUT')    return 'curl -X PUT "'+base+'/<id>" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"updated"}\'';
-    if (method==='DELETE') return 'curl -X DELETE "'+base+'/<id>" \\\n  -H "Content-Type: application/json"';
+    var info = getStateInfo();
+    var base = (url || info.endpoint || '/api/resource').replace(/\/$/, '');
+    var authHeader = info.authEnabled && info.token
+      ? ' \\\n  -H "Authorization: Bearer ' + info.token + '"'
+      : '';
+    var bodyStr = JSON.stringify(info.bodyObj);
+    if (method==='GET')    return 'curl -X GET "' + base + '" \\\n  -H "Content-Type: application/json"' + authHeader;
+    if (method==='POST')   return 'curl -X POST "' + base + '" \\\n  -H "Content-Type: application/json"' + authHeader + ' \\\n  -d \'' + bodyStr + '\'';
+    if (method==='PUT')    return 'curl -X PUT "' + base + '/{id}" \\\n  -H "Content-Type: application/json"' + authHeader + ' \\\n  -d \'' + bodyStr + '\'';
+    if (method==='DELETE') return 'curl -X DELETE "' + base + '/{id}" \\\n  -H "Content-Type: application/json"' + authHeader;
     return '';
   }
 
@@ -790,7 +829,7 @@
       var el = document.getElementById('oc-'+m.toLowerCase()+'-content');
       if (!el) return;
       var ep = eps.find(function(e){ return e.method === m; });
-      var url = ep ? ep.url : '';
+      var url = ep ? ep.url : getStateInfo().endpoint;
       var ft = fetchMap[m] || '';
       el.innerHTML = renderTabbed(m, url, ft, buildCurlSnippet(m, url));
     });
