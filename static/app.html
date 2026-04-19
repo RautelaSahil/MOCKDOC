@@ -7,29 +7,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg:       #F1F3F5;
-      --bg-warm:  #FAF9F6;
-      --card:     #FFFFFF;
-      --txt:      #212529;
-      --txt2:     #757575;
-      --input-bg: #E9F2F7;
-      --purple:   #9C8DD4;
-      --purple-btn: #A99DD8;
-      --pill-bg:  #E2E1E6;
-      --red:      #E77A73;
-      --green:    #4ADE80;
-      --shadow:   0 4px 12px rgba(0,0,0,0.05);
-      --bor:      rgba(0,0,0,0.06);
-      --f: 'Inter', sans-serif;
-      --m: 'Fira Code', monospace;
+      --bg:#F1F3F5; --bg-warm:#FAF9F6; --card:#FFFFFF; --txt:#212529; --txt2:#757575;
+      --input-bg:#E9F2F7; --purple:#9C8DD4; --purple-btn:#A99DD8; --pill-bg:#E2E1E6;
+      --red:#E77A73; --green:#4ADE80; --shadow:0 4px 12px rgba(0,0,0,0.05);
+      --bor:rgba(0,0,0,0.06); --f:'Inter',sans-serif; --m:'Fira Code',monospace;
     }
-
     html { font-size: 14px; }
     body { background: var(--bg); color: var(--txt); font-family: var(--f); min-height: 100vh; }
 
-    /* NAV */
     .topnav { background: var(--bg); border-bottom: 1px solid var(--bor); height: 46px; display: flex; align-items: center; padding: 0 24px; gap: 12px; position: sticky; top: 0; z-index: 100; }
     .logo { font-size: .9rem; font-weight: 700; color: var(--txt); text-decoration: none; display: flex; align-items: center; }
     .logo-dot { color: var(--red); }
@@ -39,7 +25,6 @@
     .nav-btn { background: var(--pill-bg); border: none; color: var(--txt2); padding: 5px 14px; border-radius: 100px; font-family: var(--f); font-size: .72rem; font-weight: 500; cursor: pointer; transition: all .2s; text-decoration: none; display: flex; align-items: center; gap: 5px; }
     .nav-btn:hover { background: #d8d7de; color: var(--txt); }
 
-    /* HERO */
     .hero { background: linear-gradient(180deg,#F1F3F5 0%,#F7F6F2 100%); padding: 28px 32px 24px; display: grid; grid-template-columns: 1fr 220px 1fr; align-items: center; gap: 0; min-height: 155px; }
     .hero-eyebrow { font-family: var(--m); font-size: .6rem; color: var(--txt2); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
     .hero-title { font-size: 2.6rem; font-weight: 300; color: var(--txt); letter-spacing: -.04em; line-height: 1.1; margin-bottom: 10px; }
@@ -52,144 +37,37 @@
     .stat-val { font-size: 1.5rem; font-weight: 300; color: var(--txt); letter-spacing: -.03em; line-height: 1; }
     .stat-lbl { font-family: var(--m); font-size: .52rem; color: var(--txt2); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
 
-    /* ══════════════════════════════════════
-       WIZARD WRAPPER
-    ══════════════════════════════════════ */
-    .wizard-wrap {
-      max-width: 620px;
-      margin: 28px auto 0;
-      padding: 0 20px 40px;
-    }
-
-    /* STEP INDICATOR */
-    .wizard-steps {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      margin-bottom: 24px;
-    }
-    .ws-item {
-      display: flex;
-      align-items: center;
-      flex: 1;
-      position: relative;
-    }
+    .wizard-wrap { max-width: 620px; margin: 28px auto 0; padding: 0 20px 40px; }
+    .wizard-steps { display: flex; align-items: center; gap: 0; margin-bottom: 24px; }
+    .ws-item { display: flex; align-items: center; flex: 1; position: relative; }
     .ws-item:last-child { flex: none; }
-    .ws-dot {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: var(--pill-bg);
-      border: 2px solid transparent;
-      display: flex; align-items: center; justify-content: center;
-      font-size: .62rem; font-weight: 700; color: var(--txt2);
-      font-family: var(--m);
-      transition: all .3s;
-      flex-shrink: 0;
-      position: relative; z-index: 1;
-    }
-    .ws-dot.active {
-      background: var(--purple);
-      border-color: rgba(156,141,212,.4);
-      color: #fff;
-      box-shadow: 0 0 0 4px rgba(156,141,212,.18);
-    }
-    .ws-dot.done {
-      background: rgba(74,222,128,.15);
-      border-color: rgba(74,222,128,.4);
-      color: #16a34a;
-    }
-    .ws-label {
-      font-size: .58rem; font-weight: 600; color: var(--txt2);
-      letter-spacing: .06em; text-transform: uppercase;
-      margin-left: 7px; white-space: nowrap;
-      transition: color .3s;
-    }
+    .ws-dot { width: 30px; height: 30px; border-radius: 50%; background: var(--pill-bg); border: 2px solid transparent; display: flex; align-items: center; justify-content: center; font-size: .62rem; font-weight: 700; color: var(--txt2); font-family: var(--m); transition: all .3s; flex-shrink: 0; position: relative; z-index: 1; }
+    .ws-dot.active { background: var(--purple); border-color: rgba(156,141,212,.4); color: #fff; box-shadow: 0 0 0 4px rgba(156,141,212,.18); }
+    .ws-dot.done { background: rgba(74,222,128,.15); border-color: rgba(74,222,128,.4); color: #16a34a; }
+    .ws-label { font-size: .58rem; font-weight: 600; color: var(--txt2); letter-spacing: .06em; text-transform: uppercase; margin-left: 7px; white-space: nowrap; transition: color .3s; }
     .ws-item.active .ws-label { color: var(--purple); }
     .ws-item.done .ws-label { color: #16a34a; }
-    .ws-line {
-      flex: 1;
-      height: 2px;
-      background: var(--pill-bg);
-      margin: 0 10px;
-      border-radius: 2px;
-      transition: background .4s;
-    }
+    .ws-line { flex: 1; height: 2px; background: var(--pill-bg); margin: 0 10px; border-radius: 2px; transition: background .4s; }
     .ws-line.done { background: rgba(74,222,128,.4); }
     .ws-line.active { background: linear-gradient(90deg, rgba(74,222,128,.4), rgba(156,141,212,.4)); }
-
-    /* PROGRESS BAR */
-    .wizard-progress {
-      height: 3px;
-      background: var(--pill-bg);
-      border-radius: 3px;
-      margin-bottom: 20px;
-      overflow: hidden;
-    }
-    .wizard-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--green), var(--purple));
-      border-radius: 3px;
-      transition: width .4s cubic-bezier(.4,0,.2,1);
-    }
-
-    /* CARD */
-    .wizard-card {
-      background: var(--card);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(0,0,0,.04);
-      overflow: hidden;
-    }
-    .wizard-card-head {
-      padding: 20px 24px 14px;
-      display: flex; align-items: center; gap: 12px;
-      border-bottom: 1px solid rgba(0,0,0,.05);
-    }
-    .card-num {
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      background: rgba(156,141,212,.18);
-      border: 1.5px solid rgba(156,141,212,.35);
-      color: var(--purple);
-      font-size: .65rem; font-weight: 600;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
+    .wizard-progress { height: 3px; background: var(--pill-bg); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+    .wizard-progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--purple)); border-radius: 3px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+    .wizard-card { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,.04); overflow: hidden; }
+    .wizard-card-head { padding: 20px 24px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,0,0,.05); }
+    .card-num { width: 26px; height: 26px; border-radius: 50%; background: rgba(156,141,212,.18); border: 1.5px solid rgba(156,141,212,.35); color: var(--purple); font-size: .65rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .wizard-card-title { font-size: .9rem; font-weight: 600; color: var(--txt); }
     .wizard-card-sub { font-size: .7rem; color: var(--txt2); margin-top: 2px; }
     .wizard-card-body { padding: 20px 24px; }
-
-    /* STEP PANELS */
     .wizard-step-panel { display: none; }
-    .wizard-step-panel.active {
-      display: block;
-      animation: wizIn .28s cubic-bezier(.4,0,.2,1);
-    }
-    @keyframes wizIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* NAV BUTTONS */
-    .wizard-nav {
-      display: flex; gap: 10px; margin-top: 20px;
-    }
-    .btn-wiz-back {
-      background: var(--pill-bg); border: none; color: var(--txt2);
-      padding: 11px 20px; border-radius: 100px;
-      font-family: var(--f); font-size: .78rem; font-weight: 500;
-      cursor: pointer; transition: all .2s;
-    }
+    .wizard-step-panel.active { display: block; animation: wizIn .28s cubic-bezier(.4,0,.2,1); }
+    @keyframes wizIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .wizard-nav { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-wiz-back { background: var(--pill-bg); border: none; color: var(--txt2); padding: 11px 20px; border-radius: 100px; font-family: var(--f); font-size: .78rem; font-weight: 500; cursor: pointer; transition: all .2s; }
     .btn-wiz-back:hover { background: #d8d7de; color: var(--txt); }
-    .btn-wiz-next {
-      flex: 1; background: var(--purple-btn); color: #fff; border: none;
-      padding: 11px 20px; border-radius: 100px;
-      font-family: var(--f); font-weight: 600; font-size: .78rem;
-      cursor: pointer; transition: all .25s;
-    }
+    .btn-wiz-next { flex: 1; background: var(--purple-btn); color: #fff; border: none; padding: 11px 20px; border-radius: 100px; font-family: var(--f); font-weight: 600; font-size: .78rem; cursor: pointer; transition: all .25s; }
     .btn-wiz-next:hover { background: #8a7bc7; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(156,141,212,.4); }
     .btn-wiz-next:disabled { opacity: .5; transform: none; box-shadow: none; }
 
-    /* ══ EXISTING FORM STYLES (preserved) ══ */
     .field { margin-bottom: 13px; }
     .field-lbl { font-family: var(--f); font-size: .58rem; font-weight: 700; color: var(--txt); letter-spacing: .07em; text-transform: uppercase; display: block; margin-bottom: 5px; }
     .field-hint { font-size: .62rem; color: var(--txt2); margin-top: 3px; }
@@ -235,8 +113,6 @@
     .step-block.hidden { display: none !important; }
     @keyframes stepIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
     .error-msg { background: rgba(231,122,115,.07); border: 1px solid rgba(231,122,115,.25); border-radius: 8px; padding: 8px 12px; font-family: var(--m); font-size: .7rem; color: var(--red); margin-bottom: 10px; }
-    .protected-route-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-family: var(--m); font-size: .7rem; color: var(--txt2); }
-    .protected-route-item input[type="checkbox"] { accent-color: var(--purple); cursor: pointer; }
     .divider { height: 1px; background: rgba(0,0,0,.05); margin: 12px 0; }
     .schema-mode-tabs { display: flex; gap: 0; margin-bottom: 12px; background: var(--input-bg); border-radius: 10px; padding: 3px; }
     .schema-mode-tab { flex: 1; border: none; background: transparent; color: var(--txt2); padding: 7px 10px; border-radius: 8px; font-family: var(--f); font-size: .68rem; font-weight: 600; cursor: pointer; transition: all .22s; display: flex; align-items: center; justify-content: center; gap: 5px; letter-spacing: .02em; }
@@ -244,9 +120,9 @@
     .schema-mode-tab:not(.active):hover { color: var(--txt); }
     .schema-panel { display: none; }
     .schema-panel.active { display: block; animation: stepIn .25s ease; }
-    .swagger-textarea { width: 100%; background: #FFFFFF; border: none; border-radius: 8px; padding: 10px 12px; color: #cdd6f4; font-family: var(--m); font-size: .68rem; line-height: 1.8; resize: vertical; outline: none; min-height: 130px; }
+    .swagger-textarea { width: 100%; background: #f8f9fa; border: 1px solid rgba(0,0,0,.08); border-radius: 8px; padding: 10px 12px; color: #333; font-family: var(--m); font-size: .68rem; line-height: 1.8; resize: vertical; outline: none; min-height: 130px; }
     .swagger-textarea:focus { box-shadow: 0 0 0 2.5px rgba(156,141,212,.4); }
-    .swagger-textarea::placeholder { color: #4a4a6a; }
+    .swagger-textarea::placeholder { color: #aab; }
     .swagger-parse-btn { width: 100%; background: rgba(156,141,212,.12); border: 1.5px solid rgba(156,141,212,.3); color: var(--purple); padding: 8px 14px; border-radius: 8px; font-family: var(--f); font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 7px; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .swagger-parse-btn:hover { background: rgba(156,141,212,.22); }
     .swagger-parse-btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -275,7 +151,7 @@
     .expiry-val { font-family: var(--m); font-size: .8rem; color: #d97706; }
     .schema-chips { display: flex; flex-wrap: wrap; gap: 4px; }
     .schema-chip { background: rgba(156,141,212,.08); border: 1px solid rgba(156,141,212,.18); border-radius: 5px; padding: 2px 8px; font-family: var(--m); font-size: .64rem; color: var(--purple); }
-    .ep-snippet { background: #FFFFFF; border-radius: 7px; padding: 10px 12px; font-family: var(--m); font-size: .66rem; line-height: 1.9; color: #cdd6f4; overflow-x: auto; margin-bottom: 8px; white-space: pre; }
+    .ep-snippet { background: #1e1e2e; border-radius: 7px; padding: 10px 12px; font-family: var(--m); font-size: .66rem; line-height: 1.9; color: #cdd6f4; overflow-x: auto; margin-bottom: 8px; white-space: pre; }
     .method-badge { font-size: .58rem; font-weight: 800; letter-spacing: .05em; padding: 3px 9px; border-radius: 5px; flex-shrink: 0; font-family: var(--m); }
     .method-GET    { color: #059669; background: rgba(5,150,105,.12); }
     .method-POST   { color: #2563eb; background: rgba(37,99,235,.12); }
@@ -283,12 +159,12 @@
     .method-DELETE { color: #e63946; background: rgba(231,122,115,.12); }
     .snippet-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
     .stab { background: var(--pill-bg); border: none; color: var(--txt2); padding: 4px 12px; border-radius: 6px; font-family: var(--m); font-size: .62rem; font-weight: 600; cursor: pointer; transition: all .2s; }
-    .stab.active { background: #FFFFFF; color: #cdd6f4; }
+    .stab.active { background: #1e1e2e; color: #cdd6f4; }
     .stab-panel { display: none; }
     .stab-panel.active { display: block; }
     .select-inp { background: var(--input-bg); border: none; border-radius: 8px; padding: 8px 11px; color: var(--txt); font-family: var(--m); font-size: .72rem; outline: none; cursor: pointer; width: 100%; }
     .tester-row { margin-bottom: 10px; }
-    .tester-resp { margin-top: 11px; background: #FFFFFF; border-radius: 9px; padding: 12px; animation: stepIn .3s ease; }
+    .tester-resp { margin-top: 11px; background: #1e1e2e; border-radius: 9px; padding: 12px; animation: stepIn .3s ease; }
     .resp-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
     .resp-lbl { font-family: var(--m); font-size: .54rem; color: #aaa; letter-spacing: .1em; text-transform: uppercase; }
     .status-badge { font-family: var(--m); font-size: .64rem; padding: 2px 8px; border-radius: 4px; }
@@ -296,30 +172,24 @@
     .status-4xx { color: #fbbf24; background: rgba(251,191,36,.12); }
     .status-5xx { color: var(--red); background: rgba(231,122,115,.12); }
     .resp-body { font-family: var(--m); font-size: .7rem; color: #a6e3a1; line-height: 1.8; white-space: pre-wrap; word-break: break-all; }
-    .fetch-snippet { background: #FFFFFF; border-radius: 8px; padding: 12px; font-family: var(--m); font-size: .68rem; line-height: 1.8; color: #cdd6f4; margin-bottom: 8px; overflow-x: auto; }
     .logs-empty { font-family: var(--m); font-size: .7rem; color: var(--txt2); }
-    .log-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 7px; font-family: var(--m); font-size: .63rem; background: #F8F9FA; border: 1px solid rgba(0,0,0,.05); margin-bottom: 4px; animation: logIn .3s ease; }
+    .log-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 7px; font-family: var(--m); font-size: .63rem; background: #F8F9FA; border: 1px solid rgba(0,0,0,.05); margin-bottom: 4px; }
     .log-method { font-weight: 800; min-width: 48px; }
     .log-route { flex: 1; color: var(--txt2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .log-status { font-weight: 700; min-width: 32px; }
     .log-time { color: var(--txt2); white-space: nowrap; }
-    .log-GET    .log-method { color: #059669; }
-    .log-POST   .log-method { color: #2563eb; }
-    .log-PUT    .log-method { color: #ea580c; }
+    .log-GET .log-method { color: #059669; }
+    .log-POST .log-method { color: #2563eb; }
+    .log-PUT .log-method { color: #ea580c; }
     .log-DELETE .log-method { color: #e63946; }
-    .log-ok  .log-status { color: #059669; }
+    .log-ok .log-status { color: #059669; }
     .log-err .log-status { color: #e63946; }
-    @keyframes logIn { from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)} }
     .seed-placeholder { background: rgba(156,141,212,.05); border: 1.5px dashed rgba(156,141,212,.25); border-radius: 10px; padding: 20px 16px; text-align: center; color: var(--txt2); font-family: var(--m); font-size: .68rem; line-height: 1.8; }
     .seed-placeholder .seed-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
-
-    /* OUTPUT CARDS GRID */
     #output-cards-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; padding: 14px 20px 0; max-width: 1400px; margin: 0 auto; }
     .card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,.04); overflow: hidden; }
     .card-head { padding: 16px 18px 10px; display: flex; align-items: center; gap: 10px; }
     .card-body { padding: 4px 18px 18px; }
-
-    /* FOOTER */
     .footer-bar { background: var(--bg-warm); border-top: 1px solid rgba(0,0,0,.06); padding: 12px 24px; margin-top: 24px; }
     .footer-top { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .footer-live-lbl { font-family: var(--f); font-size: .76rem; font-weight: 600; color: var(--txt); display: flex; align-items: center; gap: 8px; }
@@ -337,7 +207,6 @@
     .footer-bottom { max-width: 1400px; margin: 0 auto; }
     .footer-url-inp { width: 100%; background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 8px; padding: 8px 12px; color: var(--txt2); font-family: var(--m); font-size: .7rem; outline: none; }
     .footer-url-inp::placeholder { color: #bbb; }
-
     .hidden { display: none !important; }
     .mono { font-family: var(--m); }
     #resource-form-label { color: var(--purple) !important; }
@@ -347,7 +216,6 @@
 </head>
 <body>
 
-<!-- NAV -->
 <nav class="topnav">
   <a href="/" class="logo">MockDock<span class="logo-dot">.</span></a>
   <div class="nav-sep"></div>
@@ -358,7 +226,6 @@
   </div>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
   <div>
     <div class="hero-eyebrow">— Mock Backend Builder</div>
@@ -378,48 +245,25 @@
   </div>
 </section>
 
-<!-- ══════════════════════════════════════
-     WIZARD
-══════════════════════════════════════ -->
+<!-- WIZARD -->
 <div class="wizard-wrap">
-
-  <!-- Step indicators -->
   <div class="wizard-steps" id="wizard-steps">
-    <div class="ws-item active" id="wsi-0">
-      <div class="ws-dot active" id="wsd-0">1</div>
-      <span class="ws-label">Namespace</span>
-    </div>
+    <div class="ws-item active" id="wsi-0"><div class="ws-dot active" id="wsd-0">1</div><span class="ws-label">Namespace</span></div>
     <div class="ws-line" id="wsl-0"></div>
-    <div class="ws-item" id="wsi-1">
-      <div class="ws-dot" id="wsd-1">2</div>
-      <span class="ws-label">Resource</span>
-    </div>
+    <div class="ws-item" id="wsi-1"><div class="ws-dot" id="wsd-1">2</div><span class="ws-label">Resource</span></div>
     <div class="ws-line" id="wsl-1"></div>
-    <div class="ws-item" id="wsi-2">
-      <div class="ws-dot" id="wsd-2">3</div>
-      <span class="ws-label">Schema</span>
-    </div>
+    <div class="ws-item" id="wsi-2"><div class="ws-dot" id="wsd-2">3</div><span class="ws-label">Schema</span></div>
     <div class="ws-line" id="wsl-2"></div>
-    <div class="ws-item" id="wsi-3">
-      <div class="ws-dot" id="wsd-3">4</div>
-      <span class="ws-label">Seed</span>
-    </div>
+    <div class="ws-item" id="wsi-3"><div class="ws-dot" id="wsd-3">4</div><span class="ws-label">Seed</span></div>
   </div>
+  <div class="wizard-progress"><div class="wizard-progress-fill" id="wizard-progress-fill" style="width:0%"></div></div>
 
-  <!-- Progress bar -->
-  <div class="wizard-progress">
-    <div class="wizard-progress-fill" id="wizard-progress-fill" style="width:0%"></div>
-  </div>
-
-  <!-- ══ STEP 1: NAMESPACE ══ -->
+  <!-- STEP 1: NAMESPACE -->
   <div class="wizard-step-panel active" id="wsp-0">
     <div class="wizard-card">
       <div class="wizard-card-head">
         <div class="card-num">1</div>
-        <div>
-          <div class="wizard-card-title">Namespace</div>
-          <div class="wizard-card-sub">API slug &amp; auth config</div>
-        </div>
+        <div><div class="wizard-card-title">Namespace</div><div class="wizard-card-sub">API slug &amp; auth config</div></div>
       </div>
       <div class="wizard-card-body">
         <div class="field">
@@ -441,7 +285,7 @@
         <div id="recent-apis-container" class="hidden">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
             <label class="field-lbl" style="margin:0;">Recent APIs</label>
-            <button id="clear-recent-btn" class="btn-ghost" style="padding:2px 7px;font-size:.58rem;" onclick="clearRecentApis()">Clear</button>
+            <button class="btn-ghost" style="padding:2px 7px;font-size:.58rem;" onclick="clearRecentApis()">Clear</button>
           </div>
           <div id="recent-apis-list" style="display:flex;flex-direction:column;gap:5px;"></div>
         </div>
@@ -465,15 +309,12 @@
     </div>
   </div>
 
-  <!-- ══ STEP 2: RESOURCE ══ -->
+  <!-- STEP 2: RESOURCE -->
   <div class="wizard-step-panel" id="wsp-1">
     <div class="wizard-card">
       <div class="wizard-card-head">
         <div class="card-num">2</div>
-        <div>
-          <div class="wizard-card-title">Resource</div>
-          <div class="wizard-card-sub">Define a resource</div>
-        </div>
+        <div><div class="wizard-card-title">Resource</div><div class="wizard-card-sub">Define a resource</div></div>
       </div>
       <div class="wizard-card-body">
         <div class="field">
@@ -496,61 +337,62 @@
     </div>
   </div>
 
-  <!-- ══ STEP 3: SCHEMA & AUTH ══ -->
+  <!-- STEP 3: SCHEMA -->
   <div class="wizard-step-panel" id="wsp-2">
     <div class="wizard-card">
       <div class="wizard-card-head">
         <div class="card-num">3</div>
-        <div>
-          <div class="wizard-card-title">Schema &amp; Auth</div>
-          <div class="wizard-card-sub">Fields &amp; generate</div>
-        </div>
+        <div><div class="wizard-card-title">Schema &amp; Auth</div><div class="wizard-card-sub">Fields &amp; generate</div></div>
       </div>
       <div class="wizard-card-body">
-        <div class="step-block" id="step-1-schema">
-          <div class="schema-mode-tabs">
-            <button class="schema-mode-tab active" id="tab-plain" onclick="switchSchemaMode('plain')">✦ Plain English</button>
-            <button class="schema-mode-tab" id="tab-swagger" onclick="switchSchemaMode('swagger')">&lt;/&gt; Swagger / OpenAPI</button>
-          </div>
-          <div class="schema-panel active" id="panel-plain">
-            <div class="field">
-              <label class="field-lbl">Describe your schema</label>
-              <div class="inp-row" style="margin-bottom:7px;">
-                <input type="text" id="ai-schema-prompt" class="inp" placeholder="e.g. users with name, email, age and role" autocomplete="off" />
-                <button type="button" id="ai-generate-btn" class="btn-ai" onclick="generateSchemaWithAI()">+ AI</button>
-              </div>
-              <div id="ai-schema-status" style="font-family:var(--m);font-size:.6rem;color:var(--txt2);margin-bottom:6px;min-height:14px;"></div>
-              <textarea id="schema-json-input" class="code-inp" rows="5" placeholder='{"id":"string","name":"string","email":"string"}'></textarea>
-              <div id="json-parse-status" style="font-family:var(--m);font-size:.6rem;color:var(--txt2);margin-top:4px;min-height:14px;"></div>
-            </div>
-          </div>
-          <div class="schema-panel" id="panel-swagger">
-            <div class="field">
-              <label class="field-lbl">Paste Swagger / OpenAPI Spec</label>
-              <textarea id="swagger-input" class="swagger-textarea" rows="8" placeholder="Paste your OpenAPI 3.0 JSON or YAML here&#10;&#10;Supports:&#10;  • JSON  { &quot;openapi&quot;: &quot;3.0.0&quot;, ... }&#10;  • YAML  openapi: 3.0.0&#10;&#10;Auto-extracts: fields, types, routes, auth"></textarea>
-              <div id="swagger-status" class="swagger-status info">Paste a spec and click Parse →</div>
-            </div>
-            <button class="swagger-parse-btn" id="swagger-parse-btn" onclick="parseSwaggerSpec()">⟳ &nbsp; Parse &amp; Extract Schema</button>
-            <div id="swagger-preview" class="swagger-preview hidden">
-              <div class="swagger-preview-title">Extracted Fields</div>
-              <div id="swagger-fields-list"></div>
-              <div id="swagger-routes-row" class="swagger-extracted-routes hidden">
-                <div class="swagger-preview-title" style="margin-top:8px;">Detected Routes</div>
-                <div id="swagger-routes-list"></div>
-              </div>
-              <button class="swagger-apply-btn" onclick="applySwaggerToForm()">✓ &nbsp; Apply to Schema &amp; Route</button>
-            </div>
-          </div>
-          <div class="divider" style="margin:10px 0 8px;"></div>
-          <div class="toggle-row">
-            <span class="toggle-lbl">Enable Auth</span>
-            <label class="switch">
-              <input type="checkbox" id="auth-toggle-mirror" onchange="document.getElementById('auth-toggle').checked=this.checked;toggleAuth();" />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div id="step1-error-card3" class="error-msg hidden" style="margin-top:8px;"></div>
+        <div class="schema-mode-tabs">
+          <button class="schema-mode-tab active" id="tab-plain" onclick="switchSchemaMode('plain')">✦ Plain English</button>
+          <button class="schema-mode-tab" id="tab-swagger" onclick="switchSchemaMode('swagger')">&lt;/&gt; Swagger / OpenAPI</button>
         </div>
+
+        <!-- PLAIN PANEL -->
+        <div class="schema-panel active" id="panel-plain">
+          <div class="field">
+            <label class="field-lbl">Describe your schema</label>
+            <div class="inp-row" style="margin-bottom:7px;">
+              <input type="text" id="ai-schema-prompt" class="inp" placeholder="e.g. users with name, email, age and role" autocomplete="off" />
+              <button type="button" id="ai-generate-btn" class="btn-ai" onclick="generateSchemaWithAI()">+ AI</button>
+            </div>
+            <div id="ai-schema-status" style="font-family:var(--m);font-size:.6rem;color:var(--txt2);margin-bottom:6px;min-height:14px;"></div>
+            <textarea id="schema-json-input" class="code-inp" rows="5" placeholder='{"id":"string","name":"string","email":"string"}'></textarea>
+            <div id="json-parse-status" style="font-family:var(--m);font-size:.6rem;color:var(--txt2);margin-top:4px;min-height:14px;"></div>
+          </div>
+        </div>
+
+        <!-- SWAGGER PANEL -->
+        <div class="schema-panel" id="panel-swagger">
+          <div class="field">
+            <label class="field-lbl">Paste Swagger / OpenAPI Spec</label>
+            <textarea id="swagger-input" class="swagger-textarea" rows="9"
+              placeholder="Paste OpenAPI 3.0 JSON or YAML&#10;&#10;{ &quot;openapi&quot;: &quot;3.0.0&quot;, &quot;info&quot;: {...}, &quot;paths&quot;: {...} }&#10;&#10;Auto-extracts: fields, types, routes, auth"></textarea>
+            <div id="swagger-status" class="swagger-status info">Paste a spec and click Parse →</div>
+          </div>
+          <button class="swagger-parse-btn" id="swagger-parse-btn" onclick="parseSwaggerSpec()">⟳ &nbsp;Parse &amp; Extract Schema</button>
+          <div id="swagger-preview" class="swagger-preview hidden">
+            <div class="swagger-preview-title">Extracted Fields</div>
+            <div id="swagger-fields-list"></div>
+            <div id="swagger-routes-row" class="swagger-extracted-routes hidden">
+              <div class="swagger-preview-title" style="margin-top:8px;">Detected Routes</div>
+              <div id="swagger-routes-list"></div>
+            </div>
+            <button class="swagger-apply-btn" onclick="applySwaggerToForm()">✓ &nbsp;Apply to Schema &amp; Route</button>
+          </div>
+        </div>
+
+        <div class="divider" style="margin:10px 0 8px;"></div>
+        <div class="toggle-row">
+          <span class="toggle-lbl">Enable Auth</span>
+          <label class="switch">
+            <input type="checkbox" id="auth-toggle-mirror" onchange="document.getElementById('auth-toggle').checked=this.checked;toggleAuth();" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="step1-error-card3" class="error-msg hidden"></div>
         <section id="output-panel" class="hidden"></section>
       </div>
     </div>
@@ -560,20 +402,17 @@
     </div>
   </div>
 
-  <!-- ══ STEP 4: SEED RECORDS ══ -->
+  <!-- STEP 4: SEED -->
   <div class="wizard-step-panel" id="wsp-3">
     <div class="wizard-card">
       <div class="wizard-card-head">
         <div class="card-num">4</div>
-        <div>
-          <div class="wizard-card-title">Seed Records</div>
-          <div class="wizard-card-sub">Initial data for resources</div>
-        </div>
+        <div><div class="wizard-card-title">Seed Records</div><div class="wizard-card-sub">Initial data for resources</div></div>
       </div>
       <div class="wizard-card-body">
         <div id="seed-placeholder" class="seed-placeholder">
           <span class="seed-icon">🌱</span>
-          Add resources in Step 2,<br>then seed initial records here.
+          Add a resource in Step 2,<br>then seed initial records here.
         </div>
         <div id="resource-sections"></div>
         <div id="step2-error" class="error-msg hidden"></div>
@@ -584,13 +423,11 @@
       <button class="btn-wiz-next" id="submit-btn" onclick="submitCreate()">🚀 Generate Mock API</button>
     </div>
   </div>
+</div>
 
-</div><!-- /wizard-wrap -->
-
-<!-- OUTPUT CARDS ROW (unchanged) -->
-<div id="output-cards-row" class="hidden" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:14px 20px 0;max-width:1400px;margin:0 auto;">
-
-  <div class="card out-card" id="oc-script">
+<!-- OUTPUT CARDS -->
+<div id="output-cards-row" class="hidden">
+  <div class="card" id="oc-script">
     <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
       <div class="card-num" style="background:rgba(156,141,212,.15);">⟨/⟩</div>
       <div><div class="wizard-card-title">Script Tag</div><div class="wizard-card-sub">Drop into your HTML</div></div>
@@ -605,16 +442,14 @@
       </div>
     </div>
   </div>
-
-  <div class="card out-card" id="oc-schema">
+  <div class="card" id="oc-schema">
     <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
       <div class="card-num" style="background:rgba(156,141,212,.15);">{ }</div>
       <div><div class="wizard-card-title">Schema</div><div class="wizard-card-sub">Field definitions</div></div>
     </div>
     <div class="card-body"><div id="output-schema-summary" class="schema-chips"></div></div>
   </div>
-
-  <div class="card out-card" id="oc-share">
+  <div class="card" id="oc-share">
     <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
       <div class="card-num" style="background:rgba(156,141,212,.15);">↗</div>
       <div><div class="wizard-card-title">Share &amp; Expiry</div><div class="wizard-card-sub">URL, token, TTL</div></div>
@@ -649,52 +484,35 @@
       <div id="output-expiry" class="expiry-val mono"></div>
     </div>
   </div>
-
-  <div class="card out-card" id="oc-get">
+  <div class="card" id="oc-get">
     <div class="card-head" style="border-bottom:2px solid rgba(5,150,105,.2);">
       <div class="card-num" style="background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.3);color:#059669;font-size:.52rem;font-weight:800;width:28px;height:28px;">GET</div>
       <div><div class="wizard-card-title">GET</div><div class="wizard-card-sub">Fetch all / by ID</div></div>
     </div>
-    <div class="card-body">
-      <div id="oc-get-tabs" class="snippet-tabs"></div>
-      <div id="oc-get-content"><div class="logs-empty">Waiting for generate…</div></div>
-    </div>
+    <div class="card-body"><div id="oc-get-content"><div class="logs-empty">Waiting for generate…</div></div></div>
   </div>
-
-  <div class="card out-card" id="oc-post">
+  <div class="card" id="oc-post">
     <div class="card-head" style="border-bottom:2px solid rgba(37,99,235,.2);">
       <div class="card-num" style="background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.3);color:#2563eb;font-size:.52rem;font-weight:800;width:28px;height:28px;">POST</div>
       <div><div class="wizard-card-title">POST</div><div class="wizard-card-sub">Create a record</div></div>
     </div>
-    <div class="card-body">
-      <div id="oc-post-tabs" class="snippet-tabs"></div>
-      <div id="oc-post-content"><div class="logs-empty">Waiting for generate…</div></div>
-    </div>
+    <div class="card-body"><div id="oc-post-content"><div class="logs-empty">Waiting for generate…</div></div></div>
   </div>
-
-  <div class="card out-card" id="oc-put">
+  <div class="card" id="oc-put">
     <div class="card-head" style="border-bottom:2px solid rgba(234,88,12,.2);">
       <div class="card-num" style="background:rgba(234,88,12,.12);border-color:rgba(234,88,12,.3);color:#ea580c;font-size:.52rem;font-weight:800;width:28px;height:28px;">PUT</div>
       <div><div class="wizard-card-title">PUT</div><div class="wizard-card-sub">Update by ID</div></div>
     </div>
-    <div class="card-body">
-      <div id="oc-put-tabs" class="snippet-tabs"></div>
-      <div id="oc-put-content"><div class="logs-empty">Waiting for generate…</div></div>
-    </div>
+    <div class="card-body"><div id="oc-put-content"><div class="logs-empty">Waiting for generate…</div></div></div>
   </div>
-
-  <div class="card out-card" id="oc-delete">
+  <div class="card" id="oc-delete">
     <div class="card-head" style="border-bottom:2px solid rgba(231,122,115,.2);">
       <div class="card-num" style="background:rgba(231,122,115,.12);border-color:rgba(231,122,115,.3);color:#e63946;font-size:.52rem;font-weight:800;width:28px;height:28px;">DEL</div>
       <div><div class="wizard-card-title">DELETE</div><div class="wizard-card-sub">Remove by ID</div></div>
     </div>
-    <div class="card-body">
-      <div id="oc-delete-tabs" class="snippet-tabs"></div>
-      <div id="oc-delete-content"><div class="logs-empty">Waiting for generate…</div></div>
-    </div>
+    <div class="card-body"><div id="oc-delete-content"><div class="logs-empty">Waiting for generate…</div></div></div>
   </div>
-
-  <div class="card out-card" id="oc-tester">
+  <div class="card" id="oc-tester">
     <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
       <div class="card-num" style="background:rgba(156,141,212,.15);">▶</div>
       <div><div class="wizard-card-title">API Tester</div><div class="wizard-card-sub">Send live requests</div></div>
@@ -716,8 +534,7 @@
       </div>
     </div>
   </div>
-
-  <div class="card out-card" id="oc-logs" style="grid-column:1/-1;">
+  <div class="card" id="oc-logs" style="grid-column:1/-1;">
     <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
       <div class="card-num" style="background:rgba(156,141,212,.15);">≡</div>
       <div><div class="wizard-card-title">Request Logs</div><div class="wizard-card-sub">Live activity feed</div></div>
@@ -727,13 +544,10 @@
       <div id="output-logs-table"></div>
     </div>
   </div>
-
   <div id="output-fetch-block" class="hidden"><div id="output-fetch-snippets"></div></div>
   <div id="output-endpoints" class="hidden"></div>
-
 </div>
 
-<!-- FOOTER -->
 <div class="footer-bar">
   <div class="footer-top">
     <span class="footer-live-lbl">Live Endpoints <span class="live-badge">• Live</span></span>
@@ -756,6 +570,11 @@
   </div>
 </div>
 
+<!-- Hidden stubs script.js needs -->
+<div id="step-1" style="display:none"></div>
+<div id="step-2" style="display:none"></div>
+<div id="step-pill-1" style="display:none"></div>
+<div id="step-pill-2" style="display:none"></div>
 <section id="preview-panel" class="hidden">
   <div id="preview-route-path"></div>
   <div id="preview-endpoints"></div>
@@ -763,208 +582,426 @@
 
 <script src="script.js"></script>
 
-<!-- ═══ WIZARD CONTROLLER ═══ -->
+<!-- ══ WIZARD CONTROLLER ══ -->
 <script>
-var _wizStep = 0;
-var _totalSteps = 4;
+(function(){
+  var _step = 0;
+  var _total = 4;
+  var _pendingStep = null;
+  var _interceptNext = false;
+  var _interceptBack = false;
 
-function wizUpdateUI(step) {
-  for (var i = 0; i < _totalSteps; i++) {
-    var panel = document.getElementById('wsp-' + i);
-    panel.classList.toggle('active', i === step);
-    var dot  = document.getElementById('wsd-' + i);
-    var item = document.getElementById('wsi-' + i);
-    dot.classList.remove('active','done');
-    item.classList.remove('active','done');
-    if (i < step)        { dot.classList.add('done');   item.classList.add('done');   dot.textContent = '✓'; }
-    else if (i === step) { dot.classList.add('active'); item.classList.add('active'); dot.textContent = i+1; }
-    else                 { dot.textContent = i+1; }
-    if (i < _totalSteps - 1) {
-      var line = document.getElementById('wsl-' + i);
-      line.classList.remove('done','active');
-      if (i < step)        line.classList.add('done');
-      else if (i === step) line.classList.add('active');
+  function wizUpdateUI(step) {
+    for (var i = 0; i < _total; i++) {
+      document.getElementById('wsp-'+i).classList.toggle('active', i === step);
+      var dot  = document.getElementById('wsd-'+i);
+      var item = document.getElementById('wsi-'+i);
+      dot.classList.remove('active','done');
+      item.classList.remove('active','done');
+      if (i < step)        { dot.classList.add('done');   item.classList.add('done');   dot.textContent = '✓'; }
+      else if (i === step) { dot.classList.add('active'); item.classList.add('active'); dot.textContent = i+1; }
+      else                 { dot.textContent = i+1; }
+      if (i < _total-1) {
+        var line = document.getElementById('wsl-'+i);
+        line.classList.remove('done','active');
+        if (i < step)        line.classList.add('done');
+        else if (i === step) line.classList.add('active');
+      }
     }
+    document.getElementById('wizard-progress-fill').style.width = (step/(_total-1)*100)+'%';
+    _step = step;
   }
-  document.getElementById('wizard-progress-fill').style.width = (step / (_totalSteps - 1)) * 100 + '%';
-}
 
-function wizNext(fromStep) {
-  if (fromStep === 0) {
-    // Step 1 → 2: just move, no validation needed yet
-    _wizStep = 1;
-    wizUpdateUI(1);
-  } else if (fromStep === 1) {
-    // Step 2 → 3: nothing to validate here
-    _wizStep = 2;
-    wizUpdateUI(2);
-  } else if (fromStep === 2) {
-    // Step 3 → 4: this is where goToStep2 logic lives in script.js
-    // Call the original goToStep2 which validates schema, saves resource, builds seed UI
-    // We intercept showStep(2) to instead go to wsp-3
-    _pendingWizStep = 3;
-    _wizGoToStep2Intercept = true;
-    goToStep2();
-  }
-  window.scrollTo({ top: document.querySelector('.wizard-wrap').offsetTop - 60, behavior: 'smooth' });
-}
-
-function wizBack(fromStep) {
-  if (fromStep === 3) {
-    // script.js goBackToStep1 restores form state — let it run, then show wsp-2
-    _pendingWizStep = 2;
-    _wizBackIntercept = true;
-    goBackToStep1();
-  } else {
-    _wizStep = fromStep - 1;
-    wizUpdateUI(_wizStep);
-  }
-  window.scrollTo({ top: document.querySelector('.wizard-wrap').offsetTop - 60, behavior: 'smooth' });
-}
-
-// Intercept flags
-var _pendingWizStep = null;
-var _wizGoToStep2Intercept = false;
-var _wizBackIntercept = false;
-
-// Patch showStep so script.js's calls update the wizard instead
-var _origShowStep = window.showStep;
-window.showStep = function(n) {
-  if (_wizGoToStep2Intercept && n === 2) {
-    _wizGoToStep2Intercept = false;
-    _wizStep = _pendingWizStep;
-    wizUpdateUI(_wizStep);
-    return;
-  }
-  if (_wizBackIntercept && n === 1) {
-    _wizBackIntercept = false;
-    _wizStep = _pendingWizStep;
-    wizUpdateUI(_wizStep);
-    return;
-  }
-  // fallback (shouldn't be needed)
-  if (typeof _origShowStep === 'function') _origShowStep(n);
-};
-
-// Fix persistDraft: script.js reads step-1/step-2 visibility — patch it
-var _origPersistDraft = window.persistDraft;
-window.persistDraft = function() {
-  // no-op the broken step detection; just skip persisting to avoid errors
-};
-
-// Fix DOMContentLoaded listeners that reference step-1/step-2
-// Those elements don't exist — add dummy invisible ones so script.js doesn't throw
-document.addEventListener('DOMContentLoaded', function() {
-  ['step-1','step-2','step-pill-1','step-pill-2'].forEach(function(id) {
-    if (!document.getElementById(id)) {
-      var el = document.createElement('div');
-      el.id = id;
-      el.style.display = 'none';
-      document.body.appendChild(el);
+  window.wizNext = function(from) {
+    if (from === 2) {
+      // Schema → Seed: delegate to script.js goToStep2 which validates + calls buildStep2 + showStep(2)
+      _pendingStep = 3;
+      _interceptNext = true;
+      goToStep2();
+    } else {
+      wizUpdateUI(from + 1);
     }
-  });
-});
+    window.scrollTo({ top: document.querySelector('.wizard-wrap').offsetTop - 60, behavior: 'smooth' });
+  };
 
-wizUpdateUI(0);
+  window.wizBack = function(from) {
+    if (from === 3) {
+      // Seed → Schema: delegate to script.js goBackToStep1 which restores form + calls showStep(1)
+      _pendingStep = 2;
+      _interceptBack = true;
+      goBackToStep1();
+    } else {
+      wizUpdateUI(from - 1);
+    }
+    window.scrollTo({ top: document.querySelector('.wizard-wrap').offsetTop - 60, behavior: 'smooth' });
+  };
+
+  // Patch showStep — script.js calls this; we redirect to wizard panels
+  var _origShowStep = window.showStep;
+  window.showStep = function(n) {
+    if (_interceptNext && n === 2) {
+      _interceptNext = false;
+      wizUpdateUI(_pendingStep);
+      // sync seed placeholder
+      var s = document.getElementById('resource-sections');
+      var p = document.getElementById('seed-placeholder');
+      if (s && p) p.classList.toggle('hidden', s.children.length > 0);
+      return;
+    }
+    if (_interceptBack && n === 1) {
+      _interceptBack = false;
+      wizUpdateUI(_pendingStep);
+      return;
+    }
+    if (typeof _origShowStep === 'function') _origShowStep(n);
+  };
+
+  // Patch persistDraft — script.js checks step-1/step-2 visibility which we stubbed as hidden
+  // Override to use wizard step instead
+  window.persistDraft = (function(){
+    function debounce(fn, wait) {
+      var t; return function(){ clearTimeout(t); t = setTimeout(fn, wait); };
+    }
+    return debounce(function() {
+      if (window.state && window.state.endpointData) return;
+      try {
+        var draft = {
+          namespaceDraft: (document.getElementById('input-namespace')||{}).value||'',
+          resources: (window.state && window.state.resources) ? window.state.resources.slice() : [],
+          authEnabled: window.state ? window.state.authEnabled : false,
+          step: _step >= 3 ? 2 : 1,
+          currentForm: {
+            name: (document.getElementById('input-resource')||{}).value||'',
+            route_path: (document.getElementById('input-route')||{}).value||'',
+            schemaText: (document.getElementById('schema-json-input')||{}).value||''
+          }
+        };
+        if (draft.authEnabled) {
+          draft.auth = {
+            login_route: (document.getElementById('input-login-route')||{}).value||'',
+            token: (document.getElementById('input-token')||{}).value||'',
+            protected_routes: []
+          };
+          var inputs = document.querySelectorAll('#protected-routes-list input[type="checkbox"]');
+          inputs.forEach(function(cb){ if(cb.checked) draft.auth.protected_routes.push(cb.value); });
+        }
+        if (_step >= 3 && window.state && window.state.resources) {
+          draft.step2Records = window.state.resources.map(function(_,idx){
+            var el = document.getElementById('records-json-input-'+idx);
+            return el ? el.value : '';
+          });
+        }
+        localStorage.setItem('mockdock_draft_v1', JSON.stringify(draft));
+      } catch(e) {}
+    }, 300);
+  })();
+
+  // Watch output-panel for renderOutput showing it → show output cards
+  var op = document.getElementById('output-panel');
+  if (op) {
+    new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
+        if (m.attributeName === 'class' && !op.classList.contains('hidden')) {
+          showOutputCards();
+        }
+      });
+    }).observe(op, { attributes: true });
+  }
+
+  function showOutputCards() {
+    var row = document.getElementById('output-cards-row');
+    if (!row) return;
+    row.classList.remove('hidden');
+    row.style.display = 'grid';
+    row.style.gridTemplateColumns = 'repeat(4,1fr)';
+    setTimeout(function(){ row.scrollIntoView({ behavior:'smooth', block:'start' }); }, 150);
+    populateMethodCards();
+  }
+
+  function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function buildCurlSnippet(method, url) {
+    var base = url || '/api/resource';
+    if (method==='GET')    return 'curl -X GET "'+base+'" \\\n  -H "Content-Type: application/json"';
+    if (method==='POST')   return 'curl -X POST "'+base+'" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"value"}\'';
+    if (method==='PUT')    return 'curl -X PUT "'+base+'/<id>" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"updated"}\'';
+    if (method==='DELETE') return 'curl -X DELETE "'+base+'/<id>" \\\n  -H "Content-Type: application/json"';
+    return '';
+  }
+
+  var SS = 'font-size:.62rem;line-height:1.75;white-space:pre-wrap;overflow-x:auto;background:#1e1e2e;color:#cdd6f4;border-radius:7px;padding:10px 12px;margin-bottom:8px;display:block;font-family:\'Fira Code\',monospace';
+
+  function renderTabbed(method, url, fetchTxt, curlTxt) {
+    var mid = method.toLowerCase();
+    return [
+      '<div class="snippet-tabs" id="stabs-'+mid+'">',
+        '<button class="stab active" onclick="switchTab(\''+mid+'\',\'fetch\')">fetch</button>',
+        '<button class="stab" onclick="switchTab(\''+mid+'\',\'curl\')">curl</button>',
+      '</div>',
+      url ? '<div style="font-family:var(--m);font-size:.62rem;color:var(--txt2);margin-bottom:6px;">'+escHtml(url)+'</div>' : '',
+      '<div class="stab-panel active" id="sp-'+mid+'-fetch">',
+        '<div class="ep-snippet" style="'+SS+'">'+escHtml(fetchTxt||'// No fetch snippet available')+'</div>',
+        '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-fetch\')">Copy</button>',
+      '</div>',
+      '<div class="stab-panel" id="sp-'+mid+'-curl">',
+        '<div class="ep-snippet" style="'+SS+'">'+escHtml(curlTxt)+'</div>',
+        '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-curl\')">Copy</button>',
+      '</div>'
+    ].join('');
+  }
+
+  function populateMethodCards() {
+    // Get endpoints from output-endpoints (built by script.js renderOutput)
+    var epList = document.getElementById('output-endpoints');
+    var fetchSnips = document.getElementById('output-fetch-snippets');
+    if (!epList) return;
+
+    var eps = [];
+    epList.querySelectorAll('.endpoint-item').forEach(function(item) {
+      var badge = item.querySelector('.endpoint-method,[class*="method-"]');
+      var urlEl = item.querySelector('.endpoint-url');
+      if (badge && urlEl) eps.push({ method: badge.textContent.trim(), url: urlEl.textContent.trim() });
+    });
+
+    // Also build from tester select as fallback
+    if (!eps.length) {
+      var sel = document.getElementById('tester-method-select');
+      if (sel) {
+        Array.from(sel.options).forEach(function(opt) {
+          var parts = opt.value.split('|');
+          if (parts.length === 2) eps.push({ method: parts[0], url: parts[1] });
+        });
+      }
+    }
+
+    // Fetch snippet map from output-fetch-snippets
+    var fetchMap = {};
+    if (fetchSnips) {
+      fetchSnips.querySelectorAll('code,.curl-code').forEach(function(el) {
+        var txt = el.textContent || '';
+        ['GET','POST','PUT','DELETE'].forEach(function(m) {
+          if (!fetchMap[m] && (txt.includes('"'+m+'"') || txt.includes("'"+m+"'"))) fetchMap[m] = txt.trim();
+        });
+        if (!fetchMap['GET'] && txt.includes('fetch(') && !txt.includes('method')) fetchMap['GET'] = txt.trim();
+      });
+    }
+
+    ['GET','POST','PUT','DELETE'].forEach(function(m) {
+      var el = document.getElementById('oc-'+m.toLowerCase()+'-content');
+      if (!el) return;
+      var ep = eps.find(function(e){ return e.method === m; });
+      var url = ep ? ep.url : '';
+      var ft = fetchMap[m] || '';
+      el.innerHTML = renderTabbed(m, url, ft, buildCurlSnippet(m, url));
+    });
+  }
+
+  window.switchTab = function(method, tab) {
+    ['fetch','curl'].forEach(function(t) {
+      var p = document.getElementById('sp-'+method+'-'+t);
+      if (p) p.classList.toggle('active', t === tab);
+    });
+    document.querySelectorAll('#stabs-'+method+' .stab').forEach(function(b) {
+      b.classList.toggle('active', b.textContent === tab);
+    });
+  };
+
+  window.copyRaw = function(panelId) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    var snip = panel.querySelector('.ep-snippet');
+    if (!snip) return;
+    navigator.clipboard.writeText(snip.textContent).then(function() {
+      var btn = panel.querySelector('.btn-copy');
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy'; }, 1500); }
+    });
+  };
+
+  // Seed placeholder sync
+  var rsec = document.getElementById('resource-sections');
+  if (rsec) {
+    new MutationObserver(function() {
+      var p = document.getElementById('seed-placeholder');
+      if (p) p.classList.toggle('hidden', rsec.children.length > 0);
+    }).observe(rsec, { childList: true, subtree: true });
+  }
+
+  wizUpdateUI(0);
+})();
 </script>
 
-<!-- ═══ SCHEMA MODE SWITCHER + SWAGGER PARSER (unchanged) ═══ -->
+<!-- ══ SWAGGER PARSER (fixed extractFromSpec) ══ -->
 <script>
 function switchSchemaMode(mode) {
-  document.getElementById('tab-plain').classList.toggle('active', mode === 'plain');
-  document.getElementById('tab-swagger').classList.toggle('active', mode === 'swagger');
-  document.getElementById('panel-plain').classList.toggle('active', mode === 'plain');
-  document.getElementById('panel-swagger').classList.toggle('active', mode === 'swagger');
+  document.getElementById('tab-plain').classList.toggle('active', mode==='plain');
+  document.getElementById('tab-swagger').classList.toggle('active', mode==='swagger');
+  document.getElementById('panel-plain').classList.toggle('active', mode==='plain');
+  document.getElementById('panel-swagger').classList.toggle('active', mode==='swagger');
 }
 
+/* Lightweight YAML parser */
 function tryParseSpec(text) {
   var t = text.trim();
-  if (t.charAt(0) === '{' || t.charAt(0) === '[') return JSON.parse(t);
-  return parseYamlBlock(text.split('\n'), { pos: 0 }, 0);
+  if (t.charAt(0)==='{' || t.charAt(0)==='[') return JSON.parse(t);
+  return parseYamlBlock(text.split('\n'), {pos:0}, 0);
 }
-
 function parseYamlBlock(lines, cursor, baseIndent) {
   var obj = {};
   while (cursor.pos < lines.length) {
     var raw = lines[cursor.pos];
-    if (raw === undefined) break;
-    var stripped = raw.replace(/\r$/, '');
+    if (raw===undefined) break;
+    var stripped = raw.replace(/\r$/,'');
     var trimmed  = stripped.trimStart();
-    if (!trimmed || trimmed.charAt(0) === '#') { cursor.pos++; continue; }
+    if (!trimmed || trimmed.charAt(0)==='#') { cursor.pos++; continue; }
     var indent = stripped.length - trimmed.length;
     if (indent < baseIndent) break;
     if (trimmed.startsWith('- ')) break;
     var colonIdx = trimmed.indexOf(':');
-    if (colonIdx === -1) { cursor.pos++; continue; }
+    if (colonIdx===-1) { cursor.pos++; continue; }
     var key  = trimmed.slice(0, colonIdx).trim();
-    var rest = trimmed.slice(colonIdx + 1).trimStart();
+    var rest = trimmed.slice(colonIdx+1).trimStart();
     cursor.pos++;
-    if (!rest || rest === '|' || rest === '>') {
-      obj[key] = parseYamlBlock(lines, cursor, indent + 1);
+    if (!rest || rest==='|' || rest==='>') {
+      obj[key] = parseYamlBlock(lines, cursor, indent+1);
     } else if (rest.startsWith('[')) {
-      try { obj[key] = JSON.parse(rest.replace(/'/g, '"')); } catch(e) { obj[key] = []; }
+      try { obj[key] = JSON.parse(rest.replace(/'/g,'"')); } catch(e) { obj[key]=[]; }
     } else {
       obj[key] = coerceYamlScalar(rest);
     }
   }
   return obj;
 }
-
 function coerceYamlScalar(s) {
-  if (s === 'true') return true;
-  if (s === 'false') return false;
-  if (s === 'null' || s === '~') return null;
-  if (!isNaN(s) && s !== '') return Number(s);
-  if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) return s.slice(1,-1);
+  if (s==='true') return true;
+  if (s==='false') return false;
+  if (s==='null'||s==='~') return null;
+  if (!isNaN(s)&&s!=='') return Number(s);
+  if ((s.startsWith("'")&&s.endsWith("'"))||(s.startsWith('"')&&s.endsWith('"'))) return s.slice(1,-1);
   return s;
 }
 
-function extractFromSpec(spec) {
-  var schema = {}, routes = [], title = (spec.info && spec.info.title) || '', authType = null;
-  var sec = (spec.components && spec.components.securitySchemes) || spec.securityDefinitions || {};
-  Object.keys(sec).forEach(function(k){
-    var s = sec[k];
-    if (s.type === 'http' && s.scheme === 'bearer') authType = 'bearer';
-    if (s.type === 'apiKey') authType = 'apiKey';
+/* Resolve $ref within defs */
+function resolveRef(node, defs) {
+  if (!node) return node;
+  if (node['$ref']) {
+    var parts = node['$ref'].split('/');
+    var key = parts[parts.length-1];
+    return defs[key] || node;
+  }
+  return node;
+}
+
+/* Extract properties into target schema object */
+function extractPropertiesInto(schemaNode, defs, target) {
+  if (!schemaNode) return;
+  schemaNode = resolveRef(schemaNode, defs);
+  // allOf
+  if (schemaNode.allOf) {
+    schemaNode.allOf.forEach(function(sub){ extractPropertiesInto(sub, defs, target); });
+    return;
+  }
+  // unwrap array
+  if (schemaNode.type==='array' && schemaNode.items) {
+    schemaNode = resolveRef(schemaNode.items, defs);
+  }
+  var props = schemaNode.properties;
+  if (!props) return;
+  var req = schemaNode.required || [];
+  Object.keys(props).forEach(function(field) {
+    var p = resolveRef(props[field], defs);
+    var type = p.type || (p['$ref'] ? 'object' : 'string');
+    if (type==='integer') type='number';
+    target[field] = { type: type, required: req.indexOf(field)!==-1 };
   });
-  var defs = (spec.components && spec.components.schemas) || spec.definitions || {};
-  var names = Object.keys(defs);
+}
+
+/* Main extractor — handles components.schemas, definitions, inline requestBody, responses */
+function extractFromSpec(spec) {
+  var schema={}, routes=[], title=(spec.info&&spec.info.title)||'', authType=null;
+
+  // Auth
+  var sec=(spec.components&&spec.components.securitySchemes)||spec.securityDefinitions||{};
+  Object.keys(sec).forEach(function(k){
+    var s=sec[k];
+    if(s.type==='http'&&s.scheme==='bearer') authType='bearer';
+    if(s.type==='apiKey') authType='apiKey';
+  });
+
+  // Routes
+  if (spec.paths) Object.keys(spec.paths).forEach(function(p){ routes.push(p); });
+
+  // All defs for $ref resolution
+  var defs=(spec.components&&spec.components.schemas)||spec.definitions||{};
+
+  // 1. Try named schemas first
+  var names=Object.keys(defs);
   if (names.length) {
-    var preferred = names.find(function(n){ return !/error|page|pagination|response|wrapper/i.test(n); }) || names[0];
-    var target = defs[preferred];
-    if (target && target.properties) {
-      var req = target.required || [];
-      Object.keys(target.properties).forEach(function(field){
-        var p = target.properties[field];
-        var type = p.type || (p['$ref'] ? 'object' : 'string');
-        if (type === 'integer') type = 'number';
-        schema[field] = { type: type, required: req.indexOf(field) !== -1 };
-      });
+    var preferred=names.find(function(n){ return !/error|page|pagination|response|wrapper/i.test(n); })||names[0];
+    extractPropertiesInto(defs[preferred], defs, schema);
+  }
+
+  // 2. Fallback: dig into paths for inline schemas
+  if (Object.keys(schema).length===0 && spec.paths) {
+    outer: for (var path in spec.paths) {
+      var pathObj = spec.paths[path];
+      var methods = ['post','put','patch','get','delete'];
+      for (var mi=0; mi<methods.length; mi++) {
+        var op = pathObj[methods[mi]];
+        if (!op) continue;
+        // requestBody
+        if (op.requestBody && op.requestBody.content) {
+          var ct = op.requestBody.content['application/json'] ||
+                   op.requestBody.content[Object.keys(op.requestBody.content)[0]];
+          if (ct && ct.schema) {
+            extractPropertiesInto(ct.schema, defs, schema);
+            if (Object.keys(schema).length) break outer;
+          }
+        }
+        // responses
+        var responses = op.responses||{};
+        for (var code in responses) {
+          var resp = responses[code];
+          // OpenAPI 3
+          if (resp.content) {
+            var rct = resp.content['application/json'] ||
+                      resp.content[Object.keys(resp.content)[0]];
+            if (rct && rct.schema) {
+              extractPropertiesInto(rct.schema, defs, schema);
+              if (Object.keys(schema).length) break outer;
+            }
+          }
+          // OpenAPI 2
+          if (resp.schema) {
+            extractPropertiesInto(resp.schema, defs, schema);
+            if (Object.keys(schema).length) break outer;
+          }
+        }
+      }
     }
   }
-  if (spec.paths) Object.keys(spec.paths).forEach(function(p){ routes.push(p); });
-  return { schema: schema, routes: routes, title: title, authType: authType };
+
+  return { schema:schema, routes:routes, title:title, authType:authType };
 }
 
 var _swaggerParsed = null;
 
 function parseSwaggerSpec() {
-  var btn = document.getElementById('swagger-parse-btn');
-  var input = document.getElementById('swagger-input').value.trim();
+  var btn     = document.getElementById('swagger-parse-btn');
+  var input   = document.getElementById('swagger-input').value.trim();
   var preview = document.getElementById('swagger-preview');
   if (!input) { setSwaggerStatus('err','✕ Nothing to parse — paste a spec first.'); return; }
   btn.disabled = true;
   setSwaggerStatus('info','⟳ Parsing…');
   setTimeout(function(){
     try {
-      var spec = tryParseSpec(input);
+      var spec   = tryParseSpec(input);
       var result = extractFromSpec(spec);
       _swaggerParsed = result;
       renderSwaggerPreview(result);
       var count = Object.keys(result.schema).length;
       setSwaggerStatus('ok','✓ Parsed — '+count+' field'+(count===1?'':'s')+' found'+(result.routes.length?', '+result.routes.length+' route(s) detected.':'.'));
     } catch(e) {
-      setSwaggerStatus('err','✕ '+(e.message||'Parse error. Try pasting as JSON.'));
+      setSwaggerStatus('err','✕ '+(e.message||'Parse error. Try pasting valid JSON/YAML.'));
       preview.classList.add('hidden');
     }
     btn.disabled = false;
@@ -978,22 +1015,28 @@ function setSwaggerStatus(type, msg) {
 }
 
 function renderSwaggerPreview(result) {
-  var preview = document.getElementById('swagger-preview');
+  var preview    = document.getElementById('swagger-preview');
   var fieldsList = document.getElementById('swagger-fields-list');
-  var routesRow = document.getElementById('swagger-routes-row');
+  var routesRow  = document.getElementById('swagger-routes-row');
   var routesList = document.getElementById('swagger-routes-list');
   var fields = Object.keys(result.schema);
   if (!fields.length) {
-    fieldsList.innerHTML = '<div style="font-family:var(--m);font-size:.65rem;color:var(--txt2);">No schema properties found.</div>';
+    fieldsList.innerHTML = '<div style="font-family:var(--m);font-size:.65rem;color:var(--txt2);">No schema properties found in this spec.</div>';
   } else {
     fieldsList.innerHTML = fields.map(function(f){
       var fd = result.schema[f];
-      return '<div class="swagger-field-row"><span class="swagger-field-name">'+f+'</span><span class="swagger-field-type">'+fd.type+'</span>'+(fd.required?'<span class="swagger-field-req">required</span>':'<span class="swagger-field-opt">optional</span>')+'</div>';
+      return '<div class="swagger-field-row">'+
+        '<span class="swagger-field-name">'+f+'</span>'+
+        '<span class="swagger-field-type">'+fd.type+'</span>'+
+        (fd.required?'<span class="swagger-field-req">required</span>':'<span class="swagger-field-opt">optional</span>')+
+      '</div>';
     }).join('');
   }
   if (result.routes.length) {
     routesRow.classList.remove('hidden');
-    routesList.innerHTML = result.routes.slice(0,8).map(function(r){ return '<span class="swagger-route-chip">⟶ '+r+'</span>'; }).join('');
+    routesList.innerHTML = result.routes.slice(0,8).map(function(r){
+      return '<span class="swagger-route-chip">⟶ '+r+'</span>';
+    }).join('');
   } else { routesRow.classList.add('hidden'); }
   preview.classList.remove('hidden');
 }
@@ -1001,212 +1044,83 @@ function renderSwaggerPreview(result) {
 function applySwaggerToForm() {
   if (!_swaggerParsed) return;
   var r = _swaggerParsed;
+  // Build flat schema
   var flat = {};
   Object.keys(r.schema).forEach(function(k){ flat[k] = r.schema[k].type; });
   document.getElementById('schema-json-input').value = JSON.stringify(flat,null,2);
+  // Route
   if (r.routes.length) {
     var ri = document.getElementById('input-route');
-    if (!ri.value.trim()) { ri.value = r.routes[0]; var bi = document.getElementById('bar-endpoint-url-inp'); if(bi) bi.value = r.routes[0]; }
+    if (!ri.value.trim()) {
+      ri.value = r.routes[0];
+      var bi = document.getElementById('bar-endpoint-url-inp');
+      if (bi) bi.value = r.routes[0];
+    }
   }
-  if (r.title) { var ni = document.getElementById('input-namespace'); if (!ni.value.trim()) ni.value = r.title.toLowerCase().replace(/\s+/g,'-'); }
-  if (r.authType === 'bearer') {
+  // Namespace from title
+  if (r.title) {
+    var ni = document.getElementById('input-namespace');
+    if (!ni.value.trim()) ni.value = r.title.toLowerCase().replace(/\s+/g,'-');
+  }
+  // Auth
+  if (r.authType==='bearer') {
     document.getElementById('auth-toggle').checked = true;
     document.getElementById('auth-toggle-mirror').checked = true;
-    if (typeof toggleAuth === 'function') toggleAuth();
+    if (typeof toggleAuth==='function') toggleAuth();
   }
+  // Switch to plain tab to show result
   switchSchemaMode('plain');
   var ta = document.getElementById('schema-json-input');
   ta.style.transition = 'box-shadow .15s';
-  ta.style.boxShadow = '0 0 0 2.5px rgba(74,222,128,.55)';
+  ta.style.boxShadow  = '0 0 0 2.5px rgba(74,222,128,.55)';
   setTimeout(function(){ ta.style.boxShadow=''; }, 1400);
   ta.dispatchEvent(new Event('input'));
-  setSwaggerStatus('ok','✓ Applied! Schema is ready — click Next.');
+  setSwaggerStatus('ok','✓ Applied! Review schema, then click Next: Seed.');
 }
-</script>
-
-<!-- ═══ OUTPUT CARDS WIRING (unchanged) ═══ -->
-<script>
-window.addEventListener('load', function() {
-  function syncSeedPlaceholder() {
-    var s = document.getElementById('resource-sections');
-    var p = document.getElementById('seed-placeholder');
-    if (s && p) p.classList.toggle('hidden', s.children.length > 0);
-  }
-  var rsec = document.getElementById('resource-sections');
-  if (rsec) new MutationObserver(syncSeedPlaceholder).observe(rsec,{childList:true,subtree:true});
-  syncSeedPlaceholder();
-
-  var orig = window.fillOutputPanel;
-  if (typeof orig === 'function') {
-    window.fillOutputPanel = function(data){ orig(data); setTimeout(showOutputCards,80); };
-  }
-  var op = document.getElementById('output-panel');
-  if (op) {
-    new MutationObserver(function(muts){
-      muts.forEach(function(m){
-        if (m.attributeName==='class' && !op.classList.contains('hidden')) setTimeout(showOutputCards,100);
-      });
-    }).observe(op,{attributes:true});
-  }
-
-  function showOutputCards() {
-    var row = document.getElementById('output-cards-row');
-    if (!row) return;
-    row.classList.remove('hidden');
-    row.style.display = 'grid';
-    setTimeout(function(){ row.scrollIntoView({behavior:'smooth',block:'start'}); },150);
-    populateMethodCards();
-    patchLogRenderer();
-  }
-
-  var SS = ['font-size:.62rem','line-height:1.75','white-space:pre-wrap','overflow-x:auto','background:#FFFFFF','color:#cdd6f4','border-radius:7px','padding:10px 12px','margin-bottom:8px','display:block',"font-family:'Fira Code',monospace"].join(';');
-
-  function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  function buildCurl(method,url,ft){
-    var m=ft&&ft.match(/Bearer ([a-zA-Z0-9_]+)/);
-    var auth=m?' \\\n  -H "Authorization: Bearer '+m[1]+'"':'';
-    var base=url||'/api/resource';
-    if(method==='GET')    return 'curl -X GET "'+base+'"'+auth+' \\\n  -H "Content-Type: application/json"';
-    if(method==='POST')   return 'curl -X POST "'+base+'"'+auth+' \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"value"}\'';
-    if(method==='PUT')    return 'curl -X PUT "'+base+'/<id>"'+auth+' \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"updated"}\'';
-    if(method==='DELETE') return 'curl -X DELETE "'+base+'/<id>"'+auth+' \\\n  -H "Content-Type: application/json"';
-    return '';
-  }
-
-  function renderTabbed(method,url,fetchTxt,curlTxt){
-    var mid=method.toLowerCase();
-    return [
-      '<div class="snippet-tabs" id="stabs-'+mid+'">',
-        '<button class="stab active" onclick="switchTab(\''+mid+'\',\'fetch\')">fetch</button>',
-        '<button class="stab" onclick="switchTab(\''+mid+'\',\'curl\')">curl</button>',
-      '</div>',
-      url?'<div style="font-family:var(--m);font-size:.62rem;color:var(--txt2);margin-bottom:6px;">'+escHtml(url)+'</div>':'',
-      '<div class="stab-panel active" id="sp-'+mid+'-fetch">',
-        '<div class="ep-snippet" style="'+SS+'">'+escHtml(fetchTxt||'// No fetch snippet available')+'</div>',
-        '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-fetch\')">Copy</button>',
-      '</div>',
-      '<div class="stab-panel" id="sp-'+mid+'-curl">',
-        '<div class="ep-snippet" style="'+SS+'">'+escHtml(curlTxt)+'</div>',
-        '<button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-curl\')">Copy</button>',
-      '</div>'
-    ].join('');
-  }
-
-  function populateMethodCards(){
-    var epList=document.getElementById('output-endpoints');
-    if(!epList) return;
-    var eps=[];
-    epList.querySelectorAll('.method-badge').forEach(function(badge){
-      var p=badge.parentElement;
-      var u=p.querySelector('span:not(.method-badge),code,.ep-card-url');
-      eps.push({method:badge.textContent.trim(),url:u?u.textContent.trim():''});
-    });
-    var fetchMap={};
-    var fsb=document.getElementById('output-fetch-block');
-    if(fsb){
-      fsb.querySelectorAll('.fetch-snippet,pre,code').forEach(function(s){
-        var txt=s.textContent||'';
-        ['GET','POST','PUT','DELETE'].forEach(function(m){
-          if(!fetchMap[m]&&(txt.includes("'"+m+"'")||txt.includes('"'+m+'"'))) fetchMap[m]=txt.trim();
-        });
-        if(!fetchMap['GET']&&txt.includes('fetch(')&&!txt.includes('method')) fetchMap['GET']=txt.trim();
-      });
-    }
-    ['GET','POST','PUT','DELETE'].forEach(function(m){
-      var el=document.getElementById('oc-'+m.toLowerCase()+'-content');
-      if(!el) return;
-      var ep=eps.find(function(e){return e.method===m;});
-      var url=ep?ep.url:'';
-      var ft=fetchMap[m]||'';
-      el.innerHTML=renderTabbed(m,url,ft,buildCurl(m,url,ft));
-    });
-  }
-
-  window.switchTab=function(method,tab){
-    ['fetch','curl'].forEach(function(t){
-      var p=document.getElementById('sp-'+method+'-'+t);
-      if(p) p.classList.toggle('active',t===tab);
-    });
-    document.querySelectorAll('#stabs-'+method+' .stab').forEach(function(b){
-      b.classList.toggle('active',b.textContent===tab);
-    });
-  };
-
-  window.copyRaw=function(panelId){
-    var panel=document.getElementById(panelId);
-    if(!panel) return;
-    var snip=panel.querySelector('.ep-snippet');
-    if(!snip) return;
-    navigator.clipboard.writeText(snip.textContent).then(function(){
-      var btn=panel.querySelector('.btn-copy');
-      if(btn){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);}
-    });
-  };
-
-  function patchLogRenderer(){
-    var table=document.getElementById('output-logs-table');
-    if(!table) return;
-    new MutationObserver(function(){
-      table.querySelectorAll('.log-row:not([data-patched])').forEach(function(row){
-        row.setAttribute('data-patched','1');
-        var parts=row.textContent.trim().split(/\s+/);
-        var method=parts[0]||'';
-        var status='',route='',time='';
-        parts.forEach(function(p,i){if(/^\d{3}$/.test(p)){status=p;route=parts.slice(1,i).join(' ');time=parts.slice(i+1).join(' ');}});
-        if(!status) return;
-        row.className='log-row log-'+method+(parseInt(status)<400?' log-ok':' log-err');
-        row.innerHTML='<span class="log-method">'+method+'</span><span class="log-route">'+route+'</span><span class="log-status">'+status+'</span><span class="log-time">'+time+'</span>';
-      });
-    }).observe(table,{childList:true,subtree:true});
-  }
-
-  patchLogRenderer();
-});
 </script>
 
 <!-- Sync helpers -->
 <script>
 (function(){
-  var route=document.getElementById('input-route'),bar=document.getElementById('bar-endpoint-url-inp');
-  if(route&&bar) route.addEventListener('input',function(){bar.value=this.value;});
-  var t1=document.getElementById('auth-toggle'),t2=document.getElementById('auth-toggle-mirror');
-  if(t1&&t2) t1.addEventListener('change',function(){t2.checked=this.checked;});
-  var bs=document.getElementById('bar-method-select'),ms=document.getElementById('tester-method-select');
+  var route=document.getElementById('input-route'), bar=document.getElementById('bar-endpoint-url-inp');
+  if(route&&bar) route.addEventListener('input',function(){ bar.value=this.value; });
+  var t1=document.getElementById('auth-toggle'), t2=document.getElementById('auth-toggle-mirror');
+  if(t1&&t2) t1.addEventListener('change',function(){ t2.checked=this.checked; });
+  var bs=document.getElementById('bar-method-select'), ms=document.getElementById('tester-method-select');
   if(bs&&ms){
-    bs.addEventListener('change',function(){if(ms)ms.value=this.value;});
-    new MutationObserver(function(){if(ms.value)bs.value=ms.value;}).observe(ms,{childList:true});
+    bs.addEventListener('change',function(){ if(ms) ms.value=this.value; });
+    new MutationObserver(function(){ if(ms.value) bs.value=ms.value; }).observe(ms,{childList:true});
   }
 })();
 </script>
 
-<!-- Hero 3D (unchanged) -->
+<!-- Hero 3D -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
   var canvas=document.getElementById('hero3d');
   if(!canvas||typeof THREE==='undefined') return;
   var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true});
-  renderer.setPixelRatio(window.devicePixelRatio);renderer.setSize(220,170);
-  var scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(38,220/170,.1,100);
+  renderer.setPixelRatio(window.devicePixelRatio); renderer.setSize(220,170);
+  var scene=new THREE.Scene(), cam=new THREE.PerspectiveCamera(38,220/170,.1,100);
   cam.position.set(0,.5,5);
   scene.add(new THREE.AmbientLight(0xffffff,.4));
-  var dl=new THREE.DirectionalLight(0xffffff,1.1);dl.position.set(3,6,4);scene.add(dl);
-  var pl=new THREE.PointLight(0x9C8DD4,1.8,12);pl.position.set(-2,2,3);scene.add(pl);
-  var rl=new THREE.PointLight(0xE2D9FF,.8,10);rl.position.set(2,-1,2);scene.add(rl);
-  var g=new THREE.Group();scene.add(g);
+  var dl=new THREE.DirectionalLight(0xffffff,1.1); dl.position.set(3,6,4); scene.add(dl);
+  var pl=new THREE.PointLight(0x9C8DD4,1.8,12); pl.position.set(-2,2,3); scene.add(pl);
+  var rl=new THREE.PointLight(0xE2D9FF,.8,10); rl.position.set(2,-1,2); scene.add(rl);
+  var g=new THREE.Group(); scene.add(g);
   var mat=new THREE.MeshPhysicalMaterial({color:0x9C8DD4,metalness:.15,roughness:.08,transmission:.55,thickness:1.2,reflectivity:.9,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.88});
   g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),mat));
   g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.08,1),new THREE.MeshBasicMaterial({color:0xC4B8F0,wireframe:true,transparent:true,opacity:.18})));
   var ring=new THREE.Mesh(new THREE.TorusGeometry(1.42,.03,16,80),new THREE.MeshPhysicalMaterial({color:0xB8ACEC,metalness:.6,roughness:.1,transparent:true,opacity:.7}));
-  ring.rotation.x=Math.PI/2.5;ring.rotation.z=.3;g.add(ring);
+  ring.rotation.x=Math.PI/2.5; ring.rotation.z=.3; g.add(ring);
   var dot=new THREE.Mesh(new THREE.SphereGeometry(.12,16,16),new THREE.MeshPhysicalMaterial({color:0xE8E0FF,metalness:.5,roughness:.1}));
   g.add(dot);
   var clk=new THREE.Clock();
   (function tick(){
     requestAnimationFrame(tick);
     var t=clk.getElapsedTime();
-    g.rotation.y=t*.35;g.rotation.x=Math.sin(t*.4)*.18;g.position.y=Math.sin(t*.7)*.08;
+    g.rotation.y=t*.35; g.rotation.x=Math.sin(t*.4)*.18; g.position.y=Math.sin(t*.7)*.08;
     dot.position.set(Math.cos(t*1.1)*1.55,Math.sin(t*.9)*.4,Math.sin(t*1.1)*1.55);
     renderer.render(scene,cam);
   })();
