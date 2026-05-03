@@ -4,7 +4,7 @@
 
 Paste one script tag into your HTML. Your existing `fetch()` calls return the data you defined. Remove the tag when your real backend is ready. Nothing else in your code ever changes.
 
-🔗 **Live Demo:** https://mockdoc-1.onrender.com
+🔗 **Live Demo:** https://mockdoc-nrko.onrender.com/app
 
 ---
 
