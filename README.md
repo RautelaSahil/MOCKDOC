@@ -21,20 +21,29 @@ MockDock removes that friction entirely.
 ## How It Works
 
 1. **Choose a namespace** — pick a name like `team-demo`. MockDock checks availability live as you type.
-2. **Define your resources** — name each resource, set the route your frontend already calls, paste a JSON schema.
-3. **Seed records** — paste a JSON array of the actual data you want your frontend to receive.
-4. **Get your script tag** — one line. Paste it into your HTML before your own scripts.
-5. **Test** — your `fetch('/api/users')` now returns real data with no changes to your code.
-6. **Remove the tag** — when your real backend is ready, delete the one line. Done.
+2. **Define your resources** — name each resource, set the route your frontend already calls.
+3. **Generate Schema** — use **AI** to instantly generate a schema from a simple prompt, or paste your own JSON Schema.
+4. **Seed records** — use **AI** to populate realistic test data instantly, or paste a JSON array yourself.
+5. **Get your script tag** — one line. Paste it into your HTML before your own scripts.
+6. **Test** — your `fetch('/api/users')` now returns real data with no changes to your code.
+7. **Remove the tag** — when your real backend is ready, delete the one line. Done.
+
+---
+
+## AI Integration ✨
+
+MockDock is supercharged by **LLaMA 3.3 70B** via the **Groq API** to save you even more time:
+- **Instant Schema Generation:** Just type a description like "a user with name, age, and an email" and watch MockDock build the perfect schema.
+- **Realistic Data Seeding:** Click one button to populate your mock endpoints with 5 highly realistic, varied records based on your exact schema. No more "test1", "test2", "test3" dummy data.
 
 ---
 
 ## Schema Format
 
-MockDock uses a flat JSON object where keys are field names and values are type definitions.
+MockDock supports two formats:
 
-**Supported types:**
-
+### 1. Simple Flat Schema
+A flat JSON object where keys are field names and values are type definitions:
 ```json
 {
   "name": "string",
@@ -46,13 +55,26 @@ MockDock uses a flat JSON object where keys are field names and values are type 
 }
 ```
 
-**Records — paste as a JSON array:**
-
+### 2. Canonical Recursive JSON Schema
+For advanced use cases, MockDock supports standard, nested OpenAPI-style JSON schemas.
 ```json
-[
-  { "name": "Alice", "age": 30, "email": "alice@example.com", "role": "admin" },
-  { "name": "Bob",   "age": 25, "email": "bob@example.com",   "role": "user"  }
-]
+{
+  "type": "object",
+  "properties": {
+    "user": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "address": {
+          "type": "object",
+          "properties": {
+            "city": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 ---
@@ -147,7 +169,7 @@ After generating, the output panel shows:
 - All endpoints with curl commands and fetch snippets
 - Health indicator per resource — green means last request succeeded, red means failed or untested
 - Reset Records button per resource
-- Inline API tester — select an endpoint, send a request, see the response
+- **Inline API tester** — select an endpoint, dynamically send a request with an auto-formatted ID/body, and see the response
 - Request logs — method, route, status, response time, time ago — polling every 10 seconds
 
 ---
@@ -163,9 +185,11 @@ Every namespace expires **24 hours** after creation. Expired namespaces return `
 ```bash
 git clone https://github.com/RautelaSahil/MOCKDOC.git
 cd MOCKDOC
-pip install flask gunicorn
+pip install -r requirements.txt
 python app.py
 ```
+
+*Note: For AI features to work locally, set the `GROQ_API_KEY` environment variable.*
 
 Open `http://localhost:5000`
 
@@ -177,20 +201,22 @@ Open `http://localhost:5000`
 |---|---|
 | Backend | Python 3, Flask |
 | Database | SQLite |
-| Frontend | HTML, CSS, Vanilla JavaScript |
+| AI Integration | Groq API, LLaMA 3.3 70B |
+| Frontend | HTML, CSS, Vanilla JavaScript, Three.js (Landing) |
 | Hosting | Render |
 
-Dependencies: `flask` and `gunicorn` only. Everything else is Python standard library.
+Dependencies: `flask`, `gunicorn`, `python-dotenv`. Everything else is Python standard library.
 
 ---
 
 ## Project Structure
 
-```
+```text
 mockdock/
 ├── app.py                    ← Flask entry point, CORS, blueprint registration
 ├── db.py                     ← SQLite connection, migrations, all query helpers
 ├── routes/
+│   ├── ai_schema.py          ← Groq API integration for schema/record generation
 │   ├── create.py             ← POST /api/create
 │   ├── mock.py               ← CRUD endpoints, schema validation
 │   ├── namespace.py          ← GET /<slug>/check
@@ -199,9 +225,10 @@ mockdock/
 ├── middleware/
 │   └── request_logger.py     ← logs every CRUD request
 ├── static/
-│   ├── index.html
+│   ├── index.html            ← App builder interface
+│   ├── landing.html          ← Marketing landing page
 │   ├── style.css
-│   └── script.js
+│   └── script.js             ← Frontend logic for validation & tester
 └── mockdock.db               ← auto-created on first run
 ```
 
