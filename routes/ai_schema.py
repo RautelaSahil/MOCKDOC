@@ -8,7 +8,11 @@ from flask import Blueprint, jsonify, request
 ai_schema_bp = Blueprint("ai_schema", __name__)
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+
+GROQ_MODEL = os.environ.get(
+    "GROQ_MODEL",
+    "openai/gpt-oss-20b"
+).strip()
 
 SYSTEM_PROMPT = """You are a JSON schema generator for a mock REST API tool called MockDock.
 Given a description of a resource, return ONLY a valid JSON object JSON inside JSON is not applicable(NESTED SCHEMA NOT ALLOWED) at all cost ,(no markdown, no explanation) 
