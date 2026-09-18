@@ -2,7 +2,7 @@ import time
 
 from flask import g, request
 
-from db import get_resource_by_name, insert_log
+from db import get_resource_by_route, insert_log
 
 
 def register_request_logger(app):
@@ -15,18 +15,29 @@ def register_request_logger(app):
         try:
             path = request.path or ""
 
-            if path.startswith("/api/") or path.startswith("/interceptor/") or path.endswith("/check"):
+            if (
+                path.startswith("/api/")
+                or path.startswith("/interceptor/")
+                or path.endswith("/check")
+                or path.endswith("/health")
+                or path.endswith("/logs")
+                or path in ("/", "/app", "/options-handler")
+            ):
                 return response
 
             segments = [segment for segment in path.split("/") if segment]
-            if len(segments) != 2:
+            if len(segments) < 2:
                 return response
 
             namespace_slug = segments[0]
-            resource_name = segments[1]
-            resource = get_resource_by_name(namespace_slug, resource_name)
-            if not resource:
-                return response
+            if segments[-1] == "records":
+                sub_path = "/" + "/".join(segments[1:-1])
+            elif segments[-1].isdigit():
+                sub_path = "/" + "/".join(segments[1:-1])
+            else:
+                sub_path = "/" + "/".join(segments[1:])
+
+            resource = get_resource_by_route(namespace_slug, sub_path)
 
             start_time = getattr(g, "request_start_time", None)
             if start_time is None:
@@ -38,7 +49,7 @@ def register_request_logger(app):
 
             insert_log(
                 namespace_slug,
-                resource["id"],
+                resource["id"] if resource else None,
                 request.method,
                 path,
                 response.status_code,

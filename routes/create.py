@@ -100,49 +100,6 @@ def validate_request(body):
     return None
 
 
-def _is_valid_email(value):
-    if not isinstance(value, str) or "@" not in value:
-        return False
-    local, _, domain = value.partition("@")
-    return "." in domain
-
-
-def coerce_record(record, schema):
-    coerced = {}
-    for field_name, field_def in schema.items():
-        value = record.get(field_name)
-        if value is None:
-            return None, f"field '{field_name}' is missing from record"
-
-        if isinstance(field_def, str):
-            if field_def == "string":
-                coerced[field_name] = str(value)
-            elif field_def == "integer":
-                if not isinstance(value, int) or isinstance(value, bool):
-                    return None, f"field '{field_name}' expects integer"
-                coerced[field_name] = value
-            elif field_def == "number":
-                if not isinstance(value, (int, float)) or isinstance(value, bool):
-                    return None, f"field '{field_name}' expects number"
-                coerced[field_name] = value
-            elif field_def == "boolean":
-                if not isinstance(value, bool):
-                    return None, f"field '{field_name}' expects boolean"
-                coerced[field_name] = value
-        elif isinstance(field_def, dict):
-            if "enum" in field_def:
-                allowed = field_def["enum"]
-                if not isinstance(value, str) or value not in allowed:
-                    return None, f"field '{field_name}' must be one of: {', '.join(allowed)}"
-                coerced[field_name] = value
-            elif "type" in field_def and "format" in field_def:
-                if not _is_valid_email(value):
-                    return None, f"field '{field_name}' expects a valid email address"
-                coerced[field_name] = value
-
-    return coerced, None
-
-
 @create_bp.route("/api/create", methods=["POST"])
 def create():
     body = request.get_json(silent=True)

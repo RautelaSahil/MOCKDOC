@@ -56,51 +56,46 @@ def check_auth(slug, route_path):
 
 def check_ownership(ns):
     """Platform-level ownership check using namespaces.token.
-    Must be called on all write operations (POST / PUT / DELETE).
-    GET operations are intentionally excluded.
-
-    Returns a (response, status) error tuple on failure, or None on success.
+    Checks X-MockDock-Token or X-Namespace-Token header first, then Authorization: Bearer.
     """
     ns_token = ns.get("token")
-    # Treat NULL token (legacy namespace) as write-disabled.
     if not ns_token:
         return jsonify({"error": "unauthorized: this namespace has no ownership token"}), 401
 
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return jsonify({"error": "unauthorized: missing or malformed Authorization header"}), 401
+    token = request.headers.get("X-MockDock-Token") or request.headers.get("X-Namespace-Token")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[len("Bearer "):]
 
-    provided_token = auth_header[len("Bearer "):]
-    if provided_token != ns_token:
-        return jsonify({"error": "unauthorized: invalid namespace token"}), 401
+    if not token or token != ns_token:
+        return jsonify({"error": "unauthorized: invalid or missing namespace token"}), 401
 
     return None
 
 
-# validate_and_coerce removed — normalize_schema() + validate() from db.py
-# handle both legacy flat schemas and new nested JSON-Schema-style schemas.
-
-
-@mock_bp.route("/<slug>/<resource_name>", methods=["GET"])
-def list_records(slug, resource_name):
+@mock_bp.route("/<slug>/<path:resource_name>/records", methods=["DELETE"])
+def reset_records_route(slug, resource_name):
     ns, err = check_namespace(slug)
     if err is not None:
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
 
+    # Platform ownership check — must precede destructive reset logic.
+    ownership_err = check_ownership(ns)
+    if ownership_err is not None:
+        return ownership_err
+
     resource = get_resource_by_route(slug, resource_name)
     if not resource:
         return jsonify({"error": "resource not found"}), 404
 
-    auth_err = check_auth(slug, resource["route_path"])
-    if auth_err is not None:
-        return auth_err
-
-    return jsonify(get_records(resource["id"])), 200
+    reset_records(resource["id"])
+    return jsonify({"message": "records reset"}), 200
 
 
-@mock_bp.route("/<slug>/<resource_name>/<int:record_id>", methods=["GET"])
+@mock_bp.route("/<slug>/<path:resource_name>/<int:record_id>", methods=["GET"])
 def get_record_route(slug, resource_name, record_id):
     ns, err = check_namespace(slug)
     if err is not None:
@@ -123,61 +118,13 @@ def get_record_route(slug, resource_name, record_id):
     return jsonify(record), 200
 
 
-@mock_bp.route("/<slug>/<resource_name>", methods=["POST"])
-def create_record(slug, resource_name):
-    ns, err = check_namespace(slug)
-    if err is not None:
-        return err
-    if ns is None:
-        return jsonify({"error": "namespace not found"}), 404
-
-    # Platform ownership check — must precede all write logic.
-    ownership_err = check_ownership(ns)
-    if ownership_err is not None:
-        return ownership_err
-
-    resource = get_resource_by_route(slug, resource_name)
-    if not resource:
-        return jsonify({"error": "resource not found"}), 404
-
-    auth_err = check_auth(slug, resource["route_path"])
-    if auth_err is not None:
-        return auth_err
-
-    body = request.get_json(silent=True)
-    if not isinstance(body, dict):
-        return jsonify({"error": "request body must be a valid JSON object"}), 400
-
-    schema = get_schema_json(resource["id"])
-    if not schema:
-        return jsonify({"error": "schema not found"}), 404
-
-    # Schema in DB is always canonical (normalized at create time; migrated for
-    # legacy rows). Pass directly to validate() — no runtime normalization needed.
-    ok, error = validate(body, schema)
-    if not ok:
-        return jsonify({"error": error}), 400
-
-    insert_records(resource["id"], [body])
-    all_records = get_records(resource["id"])
-    if not all_records:
-        return jsonify({"error": "failed to retrieve new record"}), 500
-
-    return jsonify(all_records[-1]), 201
-
-
-@mock_bp.route("/<slug>/<resource_name>/<int:record_id>", methods=["PUT"])
+@mock_bp.route("/<slug>/<path:resource_name>/<int:record_id>", methods=["PUT"])
 def update_record_route(slug, resource_name, record_id):
     ns, err = check_namespace(slug)
     if err is not None:
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
-
-    # Platform ownership check — must precede all write logic.
-    ownership_err = check_ownership(ns)
-    if ownership_err is not None:
-        return ownership_err
 
     resource = get_resource_by_route(slug, resource_name)
     if not resource:
@@ -199,8 +146,6 @@ def update_record_route(slug, resource_name, record_id):
     if not schema:
         return jsonify({"error": "schema not found"}), 404
 
-    # Schema in DB is always canonical (normalized at create time; migrated for
-    # legacy rows). Pass directly to validate() — no runtime normalization needed.
     ok, error = validate(body, schema)
     if not ok:
         return jsonify({"error": error}), 400
@@ -210,18 +155,13 @@ def update_record_route(slug, resource_name, record_id):
     return jsonify(updated), 200
 
 
-@mock_bp.route("/<slug>/<resource_name>/<int:record_id>", methods=["DELETE"])
+@mock_bp.route("/<slug>/<path:resource_name>/<int:record_id>", methods=["DELETE"])
 def delete_record_route(slug, resource_name, record_id):
     ns, err = check_namespace(slug)
     if err is not None:
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
-
-    # Platform ownership check — must precede all write logic.
-    ownership_err = check_ownership(ns)
-    if ownership_err is not None:
-        return ownership_err
 
     resource = get_resource_by_route(slug, resource_name)
     if not resource:
@@ -239,22 +179,56 @@ def delete_record_route(slug, resource_name, record_id):
     return jsonify({"deleted": True, "id": record_id}), 200
 
 
-@mock_bp.route("/<slug>/<resource_name>/records", methods=["DELETE"])
-def reset_records_route(slug, resource_name):
+@mock_bp.route("/<slug>/<path:resource_name>", methods=["GET"])
+def list_records(slug, resource_name):
     ns, err = check_namespace(slug)
     if err is not None:
         return err
     if ns is None:
         return jsonify({"error": "namespace not found"}), 404
 
-    # Platform ownership check — must precede all write logic.
-    ownership_err = check_ownership(ns)
-    if ownership_err is not None:
-        return ownership_err
-
-    resource = get_resource_by_name(slug, resource_name)
+    resource = get_resource_by_route(slug, resource_name)
     if not resource:
         return jsonify({"error": "resource not found"}), 404
 
-    reset_records(resource["id"])
-    return jsonify({"message": "records reset"}), 200
+    auth_err = check_auth(slug, resource["route_path"])
+    if auth_err is not None:
+        return auth_err
+
+    return jsonify(get_records(resource["id"])), 200
+
+
+@mock_bp.route("/<slug>/<path:resource_name>", methods=["POST"])
+def create_record(slug, resource_name):
+    ns, err = check_namespace(slug)
+    if err is not None:
+        return err
+    if ns is None:
+        return jsonify({"error": "namespace not found"}), 404
+
+    resource = get_resource_by_route(slug, resource_name)
+    if not resource:
+        return jsonify({"error": "resource not found"}), 404
+
+    auth_err = check_auth(slug, resource["route_path"])
+    if auth_err is not None:
+        return auth_err
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({"error": "request body must be a valid JSON object"}), 400
+
+    schema = get_schema_json(resource["id"])
+    if not schema:
+        return jsonify({"error": "schema not found"}), 404
+
+    ok, error = validate(body, schema)
+    if not ok:
+        return jsonify({"error": error}), 400
+
+    insert_records(resource["id"], [body])
+    all_records = get_records(resource["id"])
+    if not all_records:
+        return jsonify({"error": "failed to retrieve new record"}), 500
+
+    return jsonify(all_records[-1]), 201

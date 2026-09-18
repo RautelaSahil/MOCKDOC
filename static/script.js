@@ -1,5 +1,5 @@
 /* ============================================================
-   MOCKDOCK ??? script.js
+   MOCKDOCK — script.js
    Two-step form, JSON schema paste, JSON record paste,
    multi-resource support, output rendering, inline API tester
    ============================================================ */
@@ -164,13 +164,13 @@ function getSchema() {
     }
   }
 
-  statusEl.textContent = '??? Valid';
+  statusEl.textContent = '✓ Valid';
   statusEl.style.color = 'var(--green)';
   return parsed;
 }
 
 // ============================================================
-// RECORDS VALIDATION ??? per resource index
+// RECORDS VALIDATION — per resource index
 // ============================================================
 function getRecordsForIndex(index) {
   var ta = document.getElementById('records-json-input-' + index);
@@ -211,7 +211,7 @@ function getRecordsForIndex(index) {
 }
 
 // ============================================================
-// MULTI-RESOURCE ??? save current form, add to list
+// MULTI-RESOURCE — save current form, add to list
 // ============================================================
 function saveCurrentResource() {
   var resource = document.getElementById('input-resource').value.trim();
@@ -287,7 +287,7 @@ function renderResourceList() {
 }
 
 // ============================================================
-// STEP 1 ??? AUTH TOGGLE
+// STEP 1 — AUTH TOGGLE
 // ============================================================
 function toggleAuth() {
   state.authEnabled = document.getElementById('auth-toggle').checked;
@@ -477,7 +477,7 @@ function randomSuffix(length) {
 }
 
 // ============================================================
-// STEP 1 ??? STEP 2
+// STEP 1 → STEP 2
 // ============================================================
 function goToStep2() {
   document.getElementById('step1-error').classList.add('hidden');
@@ -543,7 +543,7 @@ function showStep(n) {
 }
 
 // ============================================================
-// STEP 2 ??? BUILD (one section per resource)
+// STEP 2 — BUILD (one section per resource)
 // ============================================================
 function schemaFieldLabel(fieldName, fieldDef) {
   if (typeof fieldDef === 'string') return fieldName + ' (' + fieldDef + ')';
@@ -672,7 +672,7 @@ function submitCreate() {
 
   var btn = document.getElementById('submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Generating???';
+  btn.textContent = 'Generating...';
 
   fetch('/api/create', {
     method: 'POST',
@@ -941,7 +941,7 @@ function renderHealthData(healthItems) {
 
     var dot = document.createElement('span');
     dot.className = 'health-dot health-' + health.health;
-    dot.textContent = '???';
+    dot.textContent = '●';
 
     var name = document.createElement('span');
     name.className = 'endpoint-resource-name';
@@ -951,7 +951,8 @@ function renderHealthData(healthItems) {
     resetButton.className = 'btn-reset-records';
     resetButton.textContent = 'Reset Records';
     resetButton.onclick = function () {
-      resetResourceRecords(health.name, resetButton);
+      var target = (health.route_path || health.name).replace(/^\//, '');
+      resetResourceRecords(target, resetButton);
     };
 
     var statusText = document.createElement('span');
@@ -976,7 +977,10 @@ function resetResourceRecords(resourceName, button) {
   button.disabled = true;
   fetch(baseUrl + '/' + state.namespace + '/' + resourceName + '/records', {
     method: 'DELETE',
-    headers: { 'Authorization': 'Bearer ' + state.namespaceToken }
+    headers: {
+      'Authorization': 'Bearer ' + state.namespaceToken,
+      'X-MockDock-Token': state.namespaceToken
+    }
   })
     .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
     .then(function (res) {
@@ -1131,12 +1135,13 @@ function buildCurl(method, url, firstRecord, auth) {
   url = url.replace('<id>', '1');
   var parts = ['curl -X ' + method];
   var mockAuthToken = auth ? auth.token : null;
-  var nsToken = state.namespaceToken;
 
-  if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
-    if (nsToken) parts.push('-H "Authorization: Bearer ' + nsToken + '"');
-  } else {
-    if (mockAuthToken) parts.push('-H "Authorization: Bearer ' + mockAuthToken + '"');
+  if (mockAuthToken) {
+    parts.push('-H "Authorization: Bearer ' + mockAuthToken + '"');
+  }
+
+  if (url.endsWith('/records') && state.namespaceToken) {
+    parts.push('-H "X-MockDock-Token: ' + state.namespaceToken + '"');
   }
 
   parts.push('-H "Content-Type: application/json"');
@@ -1224,15 +1229,17 @@ function sendTestRequest() {
   var options = { method: method, headers: { 'Content-Type': 'application/json' } };
 
   var authHeader = document.getElementById('tester-auth-header').value.trim();
+  if (authHeader) {
+    options.headers['Authorization'] = authHeader;
+  }
 
-  if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
-    if (!state.namespaceToken) {
-      alert('You are in Viewer Mode. Provide the ownership token to modify this API.');
-      return;
-    }
-    options.headers['Authorization'] = 'Bearer ' + state.namespaceToken;
-  } else {
-    if (authHeader) options.headers['Authorization'] = authHeader;
+  if (state.namespaceToken) {
+    options.headers['X-MockDock-Token'] = state.namespaceToken;
+  }
+
+  if (url.endsWith('/records') && !state.namespaceToken) {
+    alert('You are in Viewer Mode. Provide the ownership token to modify this API.');
+    return;
   }
 
   if (method === 'POST' || method === 'PUT') {

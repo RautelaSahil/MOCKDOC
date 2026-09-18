@@ -18,7 +18,7 @@ def is_expired(expires_at: str) -> bool:
 
 def build_pass_through_js():
     return """(function() {
-  // MockDock interceptor â€” namespace not found or expired. All fetch calls pass through.
+  // MockDock interceptor — namespace not found or expired. All fetch calls pass through.
 })();
 """
 
@@ -33,8 +33,13 @@ def build_interceptor_js(route_map, auth_config):
   var _authConfig = {auth_config_json};
   var STRICT_MODE = false;
 
-  // In-memory store for records added during this session via POST
-  var _sessionRecords = {{}};
+  // Working in-memory store for records per base route
+  var _recordsStore = {{}};
+  for (var r in _routeMap) {{
+    _recordsStore[r] = (_routeMap[r].records || []).map(function(item) {{
+      return Object.assign({{}}, item);
+    }});
+  }}
 
   function _validateSoft(data, schema, path, depth) {{
     path = path || [];
@@ -102,6 +107,13 @@ def build_interceptor_js(route_map, auth_config):
       return {{ ok: true }};
     }}
 
+    if (t === 'number') {{
+      if (typeof data !== 'number' || isNaN(data)) {{
+        return {{ ok: false, err: path.join('.') + ': expected number' }};
+      }}
+      return {{ ok: true }};
+    }}
+
     if (t === 'boolean') {{
       if (typeof data !== 'boolean') return {{ ok: false, err: path.join('.') + ': expected boolean' }};
       return {{ ok: true }};
@@ -126,26 +138,26 @@ def build_interceptor_js(route_map, auth_config):
     }});
   }}
 
-  function _checkAuth(routePath, requestInit) {{
+  function _checkAuth(routePath, requestInit, requestInput) {{
     if (!_authConfig) return true;
     if (_authConfig.protected_routes.indexOf(routePath) === -1) return true;
-    var headers = (requestInit && requestInit.headers) || {{}};
-    var authHeader = headers['Authorization'] || headers['authorization'] || '';
+    var headers = (requestInit && requestInit.headers) || (requestInput && requestInput.headers) || {{}};
+    var authHeader = '';
+    if (headers && typeof headers.get === 'function') {{
+      authHeader = headers.get('Authorization') || headers.get('authorization') || '';
+    }} else if (headers) {{
+      authHeader = headers['Authorization'] || headers['authorization'] || '';
+    }}
     return authHeader === 'Bearer ' + _authConfig.token;
   }}
 
   function _getRecords(baseRoute) {{
-    var session = _sessionRecords[baseRoute];
-    var stored = (_routeMap[baseRoute] && _routeMap[baseRoute].records) || [];
-    if (session) {{
-      return stored.concat(session);
-    }}
-    return stored.slice();
+    return (_recordsStore[baseRoute] || []).slice();
   }}
 
   window.fetch = function(input, init) {{
-    var url = (typeof input === 'string') ? input : input.url;
-    var method = ((init && init.method) || 'GET').toUpperCase();
+    var url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+    var method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
     var path = _extractPath(url);
 
     if (_routeMap[path]) {{
@@ -153,7 +165,7 @@ def build_interceptor_js(route_map, auth_config):
         return Promise.resolve(_mockResponse({{ token: _authConfig.token }}));
       }}
 
-      if (!_checkAuth(path, init)) {{
+      if (!_checkAuth(path, init, input)) {{
         return Promise.resolve(_mockResponse({{ error: 'unauthorized' }}, 401));
       }}
 
@@ -176,11 +188,11 @@ def build_interceptor_js(route_map, auth_config):
           }}
         }}
 
-        var sessionId = 'session_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        var sessionId = Date.now();
         body.id = sessionId;
 
-        if (!_sessionRecords[path]) _sessionRecords[path] = [];
-        _sessionRecords[path].push(body);
+        if (!_recordsStore[path]) _recordsStore[path] = [];
+        _recordsStore[path].push(body);
 
         return Promise.resolve(_mockResponse(body, 201));
       }}
@@ -204,7 +216,7 @@ def build_interceptor_js(route_map, auth_config):
       }}
 
       if (matchedBase) {{
-        if (!_checkAuth(matchedBase, init)) {{
+        if (!_checkAuth(matchedBase, init, input)) {{
           return Promise.resolve(_mockResponse({{ error: 'unauthorized' }}, 401));
         }}
 
@@ -223,11 +235,31 @@ def build_interceptor_js(route_map, auth_config):
             }}
           }}
 
-          putBody.id = recordId;
-          return Promise.resolve(_mockResponse(putBody));
+          var targetId = String(recordId);
+          var list = _recordsStore[matchedBase] || [];
+          var updatedRecord = null;
+          for (var idx = 0; idx < list.length; idx++) {{
+            if (String(list[idx].id) === targetId) {{
+              list[idx] = Object.assign({{}}, list[idx], putBody, {{ id: list[idx].id }});
+              updatedRecord = list[idx];
+              break;
+            }}
+          }}
+          if (!updatedRecord) {{
+            putBody.id = isNaN(recordId) ? recordId : Number(recordId);
+            list.push(putBody);
+            updatedRecord = putBody;
+          }}
+
+          return Promise.resolve(_mockResponse(updatedRecord));
         }}
 
         if (method === 'DELETE') {{
+          var targetId = String(recordId);
+          var list = _recordsStore[matchedBase] || [];
+          _recordsStore[matchedBase] = list.filter(function(item) {{
+            return String(item.id) !== targetId;
+          }});
           return Promise.resolve(_mockResponse({{ deleted: true, id: recordId }}));
         }}
       }}

@@ -225,7 +225,7 @@ mockdock/
 ├── middleware/
 │   └── request_logger.py     ← logs every CRUD request
 ├── static/
-│   ├── index.html            ← App builder interface
+│   ├── app.html              ← App builder interface
 │   ├── landing.html          ← Marketing landing page
 │   ├── style.css
 │   └── script.js             ← Frontend logic for validation & tester

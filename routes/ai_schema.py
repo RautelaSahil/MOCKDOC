@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 
@@ -8,15 +9,14 @@ from flask import Blueprint, jsonify, request
 ai_schema_bp = Blueprint("ai_schema", __name__)
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = os.environ.get(
-    "GROQ_MODEL",
-    "openai/gpt-oss-20b"
-).strip()
+
+
+def get_groq_model() -> str:
+    return os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip()
 
 
 SYSTEM_PROMPT = """You are a JSON schema generator for a mock REST API tool called MockDock.
-Given a description of a resource, return ONLY a valid JSON object JSON inside JSON is not applicable at all cost ,(no markdown, no explanation) 
-that represents a MockDock schema. 
+Given a description of a resource, return ONLY a valid JSON object representing a MockDock schema.
 
 MockDock schema rules:
 - Each key is a field name
@@ -31,7 +31,21 @@ MockDock schema rules:
 Example output for "a product with name, price, stock count, and category":
 {"name":"string","price":"number","stock":"integer","category":{"enum":["electronics","clothing","food","other"]}}
 
-Return ONLY the raw JSON object. No backticks, no explanation, no extra text."""
+Return ONLY the raw JSON object."""
+
+
+def _extract_json_block(raw_text: str) -> str:
+    cleaned = raw_text.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        cleaned = "\n".join(
+            line for line in lines if not line.startswith("```")
+        ).strip()
+
+    match = re.search(r"(\{.*\}|\[.*\])", cleaned, re.DOTALL)
+    if match:
+        return match.group(1)
+    return cleaned
 
 
 def call_groq(prompt: str) -> dict:
@@ -40,79 +54,13 @@ def call_groq(prompt: str) -> dict:
         raise ValueError("GROQ_API_KEY environment variable is not set")
 
     payload = json.dumps({
-        "model": GROQ_MODEL,
+        "model": get_groq_model(),
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"Generate a MockDock schema for: {prompt}"}
         ],
+        "response_format": {"type": "json_object"},
         "temperature": 0.3,
-        "max_tokens": 512,
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        GROQ_API_URL,
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "User-Agent": "MockDock/1.0",
-        },
-        method="POST",
-    )
-
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        body = json.loads(resp.read().decode("utf-8"))
-
-    raw_text = body["choices"][0]["message"]["content"].strip()
-
-    # Strip any accidental markdown fences
-    if raw_text.startswith("```"):
-        lines = raw_text.splitlines()
-        raw_text = "\n".join(
-            line for line in lines if not line.startswith("```")
-        ).strip()
-
-    schema = json.loads(raw_text)
-    if not isinstance(schema, dict) or len(schema) == 0:
-        raise ValueError("AI returned an empty or invalid schema object")
-
-    return schema
-
-
-RECORDS_SYSTEM_PROMPT = """You are a realistic test data generator for a mock REST API tool called MockDock.
-
-Given a resource name and its schema, return ONLY a valid JSON array (no markdown, no explanation)
-containing exactly 5 realistic, varied records that match the schema exactly.
-
-MockDock schema types:
-- "string"  → realistic text value
-- "integer" → realistic whole number
-- "number"  → realistic decimal number
-- "boolean" → true or false
-- {"enum": ["a","b"]} → one of the enum values
-- {"type":"string","format":"email"} → a realistic email address
-
-Rules:
-- Every record must have every field from the schema
-- Values must be realistic and varied (not all zeros or empty strings)
-- Return ONLY the raw JSON array. No backticks, no explanation, no extra text."""
-
-
-def call_groq_records(resource_name: str, schema: dict) -> list:
-    api_key = os.environ.get("GROQ_API_KEY", "").strip()
-    if not api_key:
-        raise ValueError("GROQ_API_KEY environment variable is not set")
-
-    schema_str = json.dumps(schema)
-    user_msg = f"Generate 5 realistic records for a '{resource_name}' resource with this schema: {schema_str}"
-
-    payload = json.dumps({
-        "model": GROQ_MODEL,
-        "messages": [
-            {"role": "system", "content": RECORDS_SYSTEM_PROMPT},
-            {"role": "user", "content": user_msg}
-        ],
-        "temperature": 0.7,
         "max_tokens": 1024,
     }).encode("utf-8")
 
@@ -131,18 +79,83 @@ def call_groq_records(resource_name: str, schema: dict) -> list:
         body = json.loads(resp.read().decode("utf-8"))
 
     raw_text = body["choices"][0]["message"]["content"].strip()
+    extracted = _extract_json_block(raw_text)
 
-    if raw_text.startswith("```"):
-        lines = raw_text.splitlines()
-        raw_text = "\n".join(
-            line for line in lines if not line.startswith("```")
-        ).strip()
+    schema = json.loads(extracted)
+    # If wrapped in a root key (e.g. {"schema": {...}}), unwrap it
+    if "schema" in schema and isinstance(schema["schema"], dict):
+        schema = schema["schema"]
 
-    records = json.loads(raw_text)
-    
-    if isinstance(records, dict):
-        records = [records]
-        
+    if not isinstance(schema, dict) or len(schema) == 0:
+        raise ValueError("AI returned an empty or invalid schema object")
+
+    return schema
+
+
+RECORDS_SYSTEM_PROMPT = """You are a realistic test data generator for a mock REST API tool called MockDock.
+
+Given a resource name and its schema, return a valid JSON object containing a "records" key with an array of exactly 5 realistic, varied records that match the schema exactly.
+
+MockDock schema types:
+- "string"  → realistic text value
+- "integer" → realistic whole number
+- "number"  → realistic decimal number
+- "boolean" → true or false
+- {"enum": ["a","b"]} → one of the enum values
+- {"type":"string","format":"email"} → a realistic email address
+
+Rules:
+- Every record must have every field from the schema
+- Values must be realistic and varied
+- Output must be in this exact JSON structure: {"records": [ {...}, {...}, {...}, {...}, {...} ]}"""
+
+
+def call_groq_records(resource_name: str, schema: dict) -> list:
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not api_key:
+        raise ValueError("GROQ_API_KEY environment variable is not set")
+
+    schema_str = json.dumps(schema)
+    user_msg = f"Generate 5 realistic records for a '{resource_name}' resource with this schema: {schema_str}"
+
+    payload = json.dumps({
+        "model": get_groq_model(),
+        "messages": [
+            {"role": "system", "content": RECORDS_SYSTEM_PROMPT},
+            {"role": "user", "content": user_msg}
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.7,
+        "max_tokens": 2048,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        GROQ_API_URL,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "User-Agent": "MockDock/1.0",
+        },
+        method="POST",
+    )
+
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+
+    raw_text = body["choices"][0]["message"]["content"].strip()
+    extracted = _extract_json_block(raw_text)
+
+    parsed = json.loads(extracted)
+    if isinstance(parsed, dict):
+        records = parsed.get("records", parsed)
+        if isinstance(records, dict):
+            records = [records]
+    elif isinstance(parsed, list):
+        records = parsed
+    else:
+        records = []
+
     if not isinstance(records, list) or len(records) == 0:
         raise ValueError("AI returned an empty or invalid records array")
 

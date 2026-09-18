@@ -1,6 +1,6 @@
-from flask import Blueprint, jsonify
-
-from db import is_slug_available
+import json
+from flask import Blueprint, jsonify, request
+from db import get_auth_config, get_namespace, get_resources_by_namespace, is_slug_available
 
 namespace_bp = Blueprint("namespace", __name__)
 
@@ -12,29 +12,26 @@ def check_slug(slug):
         "available": is_slug_available(slug)
     }), 200
 
-from db import get_namespace, get_resources_by_namespace, get_auth_config
-import json
-from flask import request
 
 @namespace_bp.route("/api/namespace/<slug>", methods=["GET"])
 def get_namespace_api(slug):
     if is_slug_available(slug):
         return jsonify({"error": "API not found or expired"}), 404
-        
+
     resources = get_resources_by_namespace(slug)
     res_list = []
     for r in resources:
         schema = {}
         try:
             schema = json.loads(r.get("schema_json", "{}"))
-        except:
+        except Exception:
             pass
         res_list.append({
             "name": r["name"],
             "route_path": r["route_path"],
             "schema": schema
         })
-        
+
     auth_config = get_auth_config(slug)
     if auth_config:
         auth_out = {
@@ -46,8 +43,9 @@ def get_namespace_api(slug):
         auth_out = None
 
     host = request.host_url
-    if not host.endswith('/'):
-        host += '/'
+    if not host.endswith("/"):
+        host += "/"
+
     return jsonify({
         "namespace": slug,
         "interceptor_tag": f'<script src="{host}interceptor/{slug}.js"></script>',

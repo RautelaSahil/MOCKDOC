@@ -15,14 +15,19 @@ import sys
 import os
 
 # Allow import of db.py from the project root
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from db import get_connection, normalize_schema
+from db import get_connection, normalize_schema, _table_exists
 
 
 def migrate():
     conn = get_connection()
     conn.row_factory = __import__("sqlite3").Row
+
+    if not _table_exists(conn, "resources"):
+        print("  [INFO] 'resources' table does not exist yet. Nothing to migrate.")
+        conn.close()
+        return 0
 
     rows = conn.execute("SELECT id, schema_json FROM resources").fetchall()
     changed = 0
