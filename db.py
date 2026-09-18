@@ -426,12 +426,15 @@ def validate(data, schema: dict, path=None):
             if key not in data:
                 return False, f'{".".join(path + [key])}: field is required'
         for key in data:
-            if key not in props:
+            if key == "id":
+                continue
+            if key not in props and schema.get("additionalProperties") is False:
                 return False, f'{".".join(path + [key])}: unknown field'
         for key, value in data.items():
-            ok, err = validate(value, props[key], path + [key])
-            if not ok:
-                return False, err
+            if key in props:
+                ok, err = validate(value, props[key], path + [key])
+                if not ok:
+                    return False, err
         return True, None
 
     if t == "array":
@@ -447,7 +450,10 @@ def validate(data, schema: dict, path=None):
 
     if t == "string":
         if not isinstance(data, str):
-            return False, f'{".".join(path)}: expected string'
+            if isinstance(data, (int, float, bool)):
+                data = str(data)
+            else:
+                return False, f'{".".join(path)}: expected string'
         if schema.get("format") == "email":
             import re
             if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", data):
@@ -457,19 +463,41 @@ def validate(data, schema: dict, path=None):
         return True, None
 
     if t == "integer":
-        if not isinstance(data, int) or isinstance(data, bool):
+        if isinstance(data, bool):
             return False, f'{".".join(path)}: expected integer'
-        return True, None
+        if isinstance(data, int):
+            return True, None
+        if isinstance(data, float) and data.is_integer():
+            return True, None
+        if isinstance(data, str):
+            try:
+                int(float(data))
+                return True, None
+            except (ValueError, TypeError):
+                pass
+        return False, f'{".".join(path)}: expected integer'
 
     if t == "number":
-        if not isinstance(data, (int, float)) or isinstance(data, bool):
+        if isinstance(data, bool):
             return False, f'{".".join(path)}: expected number'
-        return True, None
+        if isinstance(data, (int, float)):
+            return True, None
+        if isinstance(data, str):
+            try:
+                float(data)
+                return True, None
+            except (ValueError, TypeError):
+                pass
+        return False, f'{".".join(path)}: expected number'
 
     if t == "boolean":
-        if not isinstance(data, bool):
-            return False, f'{".".join(path)}: expected boolean'
-        return True, None
+        if isinstance(data, bool):
+            return True, None
+        if isinstance(data, str) and data.lower() in ("true", "false", "1", "0"):
+            return True, None
+        if isinstance(data, (int, float)) and data in (0, 1):
+            return True, None
+        return False, f'{".".join(path)}: expected boolean'
 
     return False, f'{".".join(path)}: unsupported type "{t}"'
 

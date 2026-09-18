@@ -558,15 +558,14 @@ function schemaFieldLabel(fieldName, fieldDef) {
 }
 
 function exampleValueForField(fieldDef) {
-  if (typeof fieldDef === 'string') {
-    if (fieldDef === 'integer' || fieldDef === 'number') return 0;
-    if (fieldDef === 'boolean') return false;
-    return '';
-  }
+  var t = typeof fieldDef === 'string' ? fieldDef : (fieldDef && fieldDef.type);
   if (typeof fieldDef === 'object' && fieldDef !== null) {
-    if ('enum' in fieldDef && fieldDef['enum'].length > 0) return fieldDef['enum'][0];
+    if ('enum' in fieldDef && Array.isArray(fieldDef['enum']) && fieldDef['enum'].length > 0) return fieldDef['enum'][0];
     if ('format' in fieldDef && fieldDef['format'] === 'email') return 'user@example.com';
   }
+  if (t === 'integer' || t === 'number') return 1;
+  if (t === 'boolean') return true;
+  if (t === 'string') return 'sample text';
   return '';
 }
 

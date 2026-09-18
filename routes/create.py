@@ -100,6 +100,61 @@ def validate_request(body):
     return None
 
 
+def coerce_record(record: dict, schema: dict) -> dict:
+    if not isinstance(record, dict):
+        return record
+    props = schema.get("properties", {}) if schema.get("type") == "object" else schema
+    coerced = dict(record)
+
+    for field_name, field_def in props.items():
+        t = field_def.get("type") if isinstance(field_def, dict) else field_def
+        if field_name not in coerced:
+            if t == "string":
+                coerced[field_name] = ""
+            elif t in ("integer", "number"):
+                coerced[field_name] = 0
+            elif t == "boolean":
+                coerced[field_name] = False
+            continue
+
+        val = coerced[field_name]
+        if t == "integer":
+            if isinstance(val, bool):
+                coerced[field_name] = 1 if val else 0
+            elif isinstance(val, (int, float)):
+                coerced[field_name] = int(val)
+            elif isinstance(val, str):
+                try:
+                    coerced[field_name] = int(float(val))
+                except (ValueError, TypeError):
+                    coerced[field_name] = 0
+        elif t == "number":
+            if isinstance(val, bool):
+                coerced[field_name] = 1.0 if val else 0.0
+            elif isinstance(val, (int, float)):
+                coerced[field_name] = float(val)
+            elif isinstance(val, str):
+                try:
+                    coerced[field_name] = float(val)
+                except (ValueError, TypeError):
+                    coerced[field_name] = 0.0
+        elif t == "string":
+            if val is None:
+                coerced[field_name] = ""
+            elif not isinstance(val, str):
+                coerced[field_name] = str(val)
+            if isinstance(field_def, dict) and field_def.get("format") == "email":
+                if "@" not in coerced[field_name]:
+                    coerced[field_name] = f"{coerced[field_name] or 'user'}@example.com"
+        elif t == "boolean":
+            if isinstance(val, str):
+                coerced[field_name] = val.lower() in ("true", "1", "yes")
+            elif isinstance(val, (int, float)):
+                coerced[field_name] = bool(val)
+
+    return coerced
+
+
 @create_bp.route("/api/create", methods=["POST"])
 def create():
     body = request.get_json(silent=True)
@@ -108,6 +163,7 @@ def create():
 
     error = validate_request(body)
     if error:
+        print(f"[CREATE] validate_request rejected: {error}", flush=True)
         return jsonify({"error": error}), 400
 
     resources = body["resources"]
@@ -119,9 +175,12 @@ def create():
         normalized = normalize_schema(schema)
         coerced_records = []
         for record_index, record in enumerate(resource["records"]):
+            record = coerce_record(record, normalized)
             ok, err = validate(record, normalized)
             if not ok:
-                return jsonify({"error": f"resource {resource_index + 1}, record {record_index + 1}: {err}"}), 400
+                err_msg = f"resource {resource_index + 1}, record {record_index + 1}: {err}"
+                print(f"[CREATE] Record validation failed: {err_msg}", flush=True)
+                return jsonify({"error": err_msg}), 400
             coerced_records.append(record)
 
         coerced_resources.append({
