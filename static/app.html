@@ -856,6 +856,24 @@ function wizNext(from) {
     var err = document.getElementById('step1-error');
     if (!ns) { if(err){ err.textContent='Please enter an API slug.'; err.classList.remove('hidden'); } return; }
     if(err) err.classList.add('hidden');
+    state.namespaceDraft = ns;
+  }
+  if (from === 2) {
+    // Validate resource name and route
+    var rName = document.getElementById('input-resource').value.trim();
+    var rRoute = document.getElementById('input-route').value.trim();
+    if (!rName && state.resources.length === 0) {
+      document.getElementById('input-resource').value = 'users';
+      rName = 'users';
+    }
+    if (!rRoute && state.resources.length === 0) {
+      document.getElementById('input-route').value = '/' + rName;
+      rRoute = '/' + rName;
+    }
+    if (rRoute && !rRoute.startsWith('/')) {
+      rRoute = '/' + rRoute;
+      document.getElementById('input-route').value = rRoute;
+    }
   }
   wizShow(from + 1);
 }
@@ -863,33 +881,91 @@ function wizNext(from) {
 function wizBack(from) { wizShow(from - 1); }
 
 function wizGoToStep4() {
-  // Trigger schema validation that goToStep2() normally does, then go to step 4
-  if (typeof goToStep2 === 'function') {
-    // intercept — we override the show-output-panel behaviour below
-    var errEl = document.getElementById('step1-error-card3');
-    var schema = document.getElementById('schema-json-input').value.trim();
-    if (!schema) {
-      if(errEl){ errEl.textContent='Please enter a schema.'; errEl.classList.remove('hidden'); }
-      return;
-    }
-    try { JSON.parse(schema); } catch(e) {
-      if(errEl){ errEl.textContent='Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); }
-      return;
-    }
-    if(errEl) errEl.classList.add('hidden');
+  var errEl = document.getElementById('step1-error-card3');
+  if (errEl) errEl.classList.add('hidden');
+
+  var schemaRaw = document.getElementById('schema-json-input').value.trim();
+  if (!schemaRaw) {
+    if (errEl) { errEl.textContent = 'Please enter or generate a schema.'; errEl.classList.remove('hidden'); }
+    return;
   }
+
+  var parsedSchema;
+  try {
+    parsedSchema = JSON.parse(schemaRaw);
+    if (typeof parsedSchema !== 'object' || parsedSchema === null || Array.isArray(parsedSchema)) {
+      throw new Error('Schema must be a JSON object mapping fields to types.');
+    }
+    if (Object.keys(parsedSchema).length === 0) {
+      throw new Error('Schema must contain at least one field.');
+    }
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); }
+    return;
+  }
+
+  var resNameInput = document.getElementById('input-resource');
+  var routeInput = document.getElementById('input-route');
+  var resName = (resNameInput && resNameInput.value.trim()) || 'users';
+  var route = (routeInput && routeInput.value.trim()) || ('/' + resName);
+  if (!route.startsWith('/')) route = '/' + route;
+
+  if (state.resources.length === 0) {
+    state.resources = [{
+      name: resName,
+      route_path: route,
+      schema: parsedSchema
+    }];
+  } else {
+    var lastIdx = state.resources.length - 1;
+    state.resources[lastIdx].schema = parsedSchema;
+    if (resName) state.resources[lastIdx].name = resName;
+    if (route) state.resources[lastIdx].route_path = route;
+  }
+
+  // Auth synchronization
+  state.auth = null;
+  var authChecked = (document.getElementById('auth-toggle') && document.getElementById('auth-toggle').checked) ||
+                    (document.getElementById('auth-toggle-mirror') && document.getElementById('auth-toggle-mirror').checked);
+  if (authChecked) {
+    var loginRoute = (document.getElementById('input-login-route') && document.getElementById('input-login-route').value.trim()) || '/api/login';
+    var token = (document.getElementById('input-token') && document.getElementById('input-token').value.trim()) || 'mock_token';
+    var protectedRoutes = [];
+    var cb = document.getElementById('protect-route-cb');
+    if (cb && cb.checked && cb.value) protectedRoutes.push(cb.value);
+    if (!protectedRoutes.length && route) protectedRoutes.push(route);
+    state.auth = { login_route: loginRoute, token: token, protected_routes: protectedRoutes };
+  }
+
+  var nsInput = document.getElementById('input-namespace');
+  if (nsInput && nsInput.value.trim()) {
+    state.namespaceDraft = nsInput.value.trim();
+  }
+
+  if (typeof buildStep2 === 'function') {
+    buildStep2();
+  }
+
+  var seedPl = document.getElementById('seed-placeholder');
+  if (seedPl) seedPl.classList.toggle('hidden', state.resources.length > 0);
+
   wizShow(4);
 }
 
 function wizSubmit() {
-  // Call original submitCreate, then advance to step 5 after a short delay
-  if (typeof submitCreate === 'function') submitCreate();
-  setTimeout(function() { wizShow(5); }, 400);
+  var errEl = document.getElementById('step2-error');
+  if (errEl) errEl.classList.add('hidden');
+  if (typeof submitCreate === 'function') {
+    submitCreate();
+  }
 }
 
 function wizReset() {
+  state.resources = [];
+  state.endpointData = null;
+  state.namespace = null;
+  state.namespaceToken = null;
   wizShow(1);
-  // Reset form fields
   ['input-namespace','input-resource','input-route','schema-json-input','ai-schema-prompt'].forEach(function(id) {
     var el = document.getElementById(id); if(el) el.value = '';
   });
@@ -897,15 +973,6 @@ function wizReset() {
   var rs = document.getElementById('resource-sections'); if(rs) rs.innerHTML = '';
   var op = document.getElementById('output-panel'); if(op) op.classList.add('hidden');
 }
-
-/* Override goToStep2 to stay in wizard (schema card calls it via Generate button).
-   The button is now replaced by the wizard Next, but goToStep2 may still be called
-   internally by script.js — let it run its logic, we just don't let it scroll. */
-var _origGoToStep2 = window.goToStep2;
-window.goToStep2 = function() {
-  if (typeof _origGoToStep2 === 'function') _origGoToStep2();
-  // don't advance wizard here — wizard nav controls that
-};
 
 /* goBackToStep1 — used inside seed card by script.js */
 window.goBackToStep1 = function() { wizShow(3); };
@@ -1071,9 +1138,12 @@ window.addEventListener('load', function() {
   if (rsec) new MutationObserver(syncSeedPlaceholder).observe(rsec, { childList: true, subtree: true });
   syncSeedPlaceholder();
 
-  var orig = window.fillOutputPanel;
-  if (typeof orig === 'function') {
-    window.fillOutputPanel = function(data) { orig(data); setTimeout(populateMethodCards, 80); };
+  var origRenderOutput = window.renderOutput;
+  if (typeof origRenderOutput === 'function') {
+    window.renderOutput = function(data) {
+      origRenderOutput(data);
+      setTimeout(populateMethodCards, 80);
+    };
   }
 
   var SS = ['font-size:.62rem','line-height:1.75','white-space:pre-wrap','overflow-x:auto','background:#FFFFFF','color:#cdd6f4','border-radius:7px','padding:10px 12px','margin-bottom:8px','display:block',"font-family:'Fira Code',monospace"].join(';');
@@ -1100,15 +1170,20 @@ window.addEventListener('load', function() {
     var epList = document.getElementById('output-endpoints');
     if (!epList) return;
     var eps = [];
-    epList.querySelectorAll('.method-badge').forEach(function(badge) {
+    epList.querySelectorAll('.endpoint-method, .method-badge').forEach(function(badge) {
       var p = badge.parentElement;
-      var u = p.querySelector('span:not(.method-badge),code,.ep-card-url');
-      eps.push({ method: badge.textContent.trim(), url: u ? u.textContent.trim() : '' });
+      var u = p ? p.querySelector('.endpoint-url, .ep-card-url, span:not(.endpoint-method):not(.method-badge), code') : null;
+      var curlEl = p && p.parentElement ? p.parentElement.querySelector('.curl-code, code') : null;
+      eps.push({
+        method: badge.textContent.trim(),
+        url: u ? u.textContent.trim() : '',
+        curl: curlEl ? curlEl.textContent.trim() : ''
+      });
     });
     var fetchMap = {};
-    var fsb = document.getElementById('output-fetch-block');
+    var fsb = document.getElementById('output-fetch-snippets') || document.getElementById('output-fetch-block');
     if (fsb) {
-      fsb.querySelectorAll('.fetch-snippet,pre,code').forEach(function(s) {
+      fsb.querySelectorAll('.curl-code, .fetch-snippet, code, pre').forEach(function(s) {
         var txt = s.textContent || '';
         ['GET','POST','PUT','DELETE'].forEach(function(m) {
           if (!fetchMap[m] && (txt.includes("'"+m+"'") || txt.includes('"'+m+'"'))) fetchMap[m] = txt.trim();
@@ -1122,9 +1197,11 @@ window.addEventListener('load', function() {
       var ep = eps.find(function(e){ return e.method === m; });
       var url = ep ? ep.url : '';
       var ft = fetchMap[m] || '';
-      el.innerHTML = renderTabbed(m, url, ft, buildCurl(m, url, ft));
+      var curl = (ep && ep.curl) || buildCurl(m, url, ft);
+      el.innerHTML = renderTabbed(m, url, ft, curl);
     });
   }
+  window.populateMethodCards = populateMethodCards;
   window.switchTab = function(method, tab) {
     ['fetch','curl'].forEach(function(t) {
       var p = document.getElementById('sp-'+method+'-'+t);

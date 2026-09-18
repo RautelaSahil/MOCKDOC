@@ -176,9 +176,12 @@ function getRecordsForIndex(index) {
   var ta = document.getElementById('records-json-input-' + index);
   if (!ta) return null;
   var raw = ta.value.trim();
+  if (!raw && ta.placeholder) {
+    raw = ta.placeholder.trim();
+  }
 
   if (!raw) {
-    showStep2Error('Resource ' + (index + 1) + ': paste at least one record.');
+    showStep2Error('Resource ' + (index + 1) + ': paste at least one record or generate with AI.');
     return null;
   }
 
@@ -639,6 +642,7 @@ function buildStep2() {
     ta.className = 'code-textarea';
     ta.rows = 10;
     ta.placeholder = placeholder;
+    ta.value = placeholder;
     section.appendChild(ta);
 
     container.appendChild(section);
@@ -650,7 +654,31 @@ function buildStep2() {
 // ============================================================
 function submitCreate() {
   var errorEl = document.getElementById('step2-error');
-  errorEl.classList.add('hidden');
+  if (errorEl) errorEl.classList.add('hidden');
+
+  // Ensure namespaceDraft is up to date
+  var nsInput = document.getElementById('input-namespace');
+  var slug = (nsInput && nsInput.value.trim()) || state.namespaceDraft || '';
+  state.namespaceDraft = slug;
+
+  // Fallback: If state.resources is empty, attempt to resolve from step inputs
+  if (!state.resources || state.resources.length === 0) {
+    var resInput = document.getElementById('input-resource');
+    var routeInput = document.getElementById('input-route');
+    var rName = (resInput && resInput.value.trim()) || 'items';
+    var rRoute = (routeInput && routeInput.value.trim()) || ('/' + rName);
+    if (!rRoute.startsWith('/')) rRoute = '/' + rRoute;
+    var rSchema = getSchema();
+    if (!rSchema) {
+      if (errorEl) {
+        errorEl.textContent = 'Please configure a schema and at least one resource before generating.';
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+    state.resources = [{ name: rName, route_path: rRoute, schema: rSchema }];
+    buildStep2();
+  }
 
   var resourcesPayload = [];
   for (var i = 0; i < state.resources.length; i++) {
@@ -671,8 +699,10 @@ function submitCreate() {
   if (state.auth) payload.auth = state.auth;
 
   var btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.textContent = 'Generating...';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+  }
 
   fetch('/api/create', {
     method: 'POST',
@@ -681,11 +711,15 @@ function submitCreate() {
   })
     .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
     .then(function (res) {
-      btn.disabled = false;
-      btn.textContent = 'Generate Mock API';
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Generate Mock API 🚀';
+      }
       if (!res.ok) {
-        errorEl.textContent = res.data.error || 'Something went wrong.';
-        errorEl.classList.remove('hidden');
+        if (errorEl) {
+          errorEl.textContent = res.data.error || 'Something went wrong.';
+          errorEl.classList.remove('hidden');
+        }
         return;
       }
       state.namespace = res.data.namespace;
@@ -705,10 +739,14 @@ function submitCreate() {
       renderOutput(res.data);
     })
     .catch(function (err) {
-      btn.disabled = false;
-      btn.textContent = 'Generate Mock API';
-      errorEl.textContent = 'Network error: ' + err.message;
-      errorEl.classList.remove('hidden');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Generate Mock API 🚀';
+      }
+      if (errorEl) {
+        errorEl.textContent = 'Network error: ' + err.message;
+        errorEl.classList.remove('hidden');
+      }
     });
 }
 
@@ -858,12 +896,21 @@ function renderOutput(data) {
   renderFetchSnippets(data, endpoints);
 
   // Show output panel
-  document.getElementById('preview-panel').classList.add('hidden');
+  var previewPanel = document.getElementById('preview-panel');
+  if (previewPanel) previewPanel.classList.add('hidden');
   var outputPanel = document.getElementById('output-panel');
-  outputPanel.classList.remove('hidden');
+  if (outputPanel) outputPanel.classList.remove('hidden');
   refreshOutputStatus();
   startOutputPolling();
-  outputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (outputPanel) outputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Advance wizard to Step 5
+  if (typeof wizShow === 'function') {
+    wizShow(5);
+  }
+  if (typeof populateMethodCards === 'function') {
+    setTimeout(populateMethodCards, 60);
+  }
 }
 
 function startOutputPolling() {
