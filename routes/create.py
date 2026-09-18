@@ -107,7 +107,13 @@ def coerce_record(record: dict, schema: dict) -> dict:
     coerced = dict(record)
 
     for field_name, field_def in props.items():
-        t = field_def.get("type") if isinstance(field_def, dict) else field_def
+        if isinstance(field_def, dict):
+            t = field_def.get("type")
+            if not t and "enum" in field_def:
+                t = "enum"
+        else:
+            t = field_def
+
         if field_name not in coerced:
             if t == "string":
                 coerced[field_name] = ""
@@ -115,9 +121,19 @@ def coerce_record(record: dict, schema: dict) -> dict:
                 coerced[field_name] = 0
             elif t == "boolean":
                 coerced[field_name] = False
+            elif isinstance(field_def, dict) and "enum" in field_def and field_def["enum"]:
+                coerced[field_name] = field_def["enum"][0]
             continue
 
         val = coerced[field_name]
+        if isinstance(field_def, dict) and "enum" in field_def and field_def["enum"]:
+            enum_vals = field_def["enum"]
+            if val not in enum_vals:
+                matched = next((e for e in enum_vals if str(e).lower() == str(val).lower()), None)
+                if matched is not None:
+                    coerced[field_name] = matched
+            continue
+
         if t == "integer":
             if isinstance(val, bool):
                 coerced[field_name] = 1 if val else 0

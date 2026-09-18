@@ -392,14 +392,39 @@ def normalize_schema(schema: dict) -> dict:
     New-style schemas that already carry ``"type": "object"`` at the top level
     are returned unchanged, so this is safe to call on every schema read.
     """
-    if schema.get("type") == "object":
+    if schema.get("type") == "object" and "properties" in schema:
+        # Ensure enum subschemas have type: string if not set
+        normalized_props = {}
+        for k, v in schema["properties"].items():
+            if isinstance(v, dict):
+                v_copy = dict(v)
+                if "enum" in v_copy and "type" not in v_copy:
+                    v_copy["type"] = "string"
+                normalized_props[k] = v_copy
+            elif isinstance(v, str):
+                normalized_props[k] = {"type": v}
+            else:
+                normalized_props[k] = v
+        schema["properties"] = normalized_props
         return schema
+
+    props = {}
+    for k, v in schema.items():
+        if k in ("type", "properties", "required"):
+            continue
+        if isinstance(v, str):
+            props[k] = {"type": v}
+        elif isinstance(v, dict):
+            v_copy = dict(v)
+            if "enum" in v_copy and "type" not in v_copy:
+                v_copy["type"] = "string"
+            props[k] = v_copy
+        else:
+            props[k] = {"type": "string"}
+
     return {
         "type": "object",
-        "properties": {
-            k: {"type": v} if isinstance(v, str) else v
-            for k, v in schema.items()
-        },
+        "properties": props,
         "required": [],
     }
 
@@ -416,6 +441,27 @@ def validate(data, schema: dict, path=None):
     if path is None:
         path = []
     t = schema.get("type")
+
+    # Handle enum fields that may not have type: string specified
+    if "enum" in schema:
+        enum_vals = schema.get("enum", [])
+        if isinstance(enum_vals, list) and len(enum_vals) > 0:
+            if data in enum_vals or str(data) in [str(x) for x in enum_vals]:
+                return True, None
+            return False, f'{".".join(path)}: invalid enum value'
+
+    # Deduce type if missing
+    if t is None:
+        if "properties" in schema:
+            t = "object"
+        elif "items" in schema:
+            t = "array"
+        elif "format" in schema:
+            t = "string"
+        elif "enum" in schema:
+            t = "string"
+        else:
+            return True, None
 
     if t == "object":
         if not isinstance(data, dict):
