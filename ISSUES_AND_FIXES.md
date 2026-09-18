@@ -487,10 +487,38 @@ This document provides an exhaustive breakdown of bugs, architectural bottleneck
 
 | Category | Issue | Impact | Difficulty |
 |---|---|---|---|
+---
+
+### Issue 12: 5-Step Wizard State Desynchronization and Premature Advancement
+- **Category:** Integration / Frontend UX
+- **Severity:** 🔴 Critical
+- **Symptoms:**
+  - In the 5-step wizard UI, advancing from Step 3 (Schema & Auth) to Step 4 (Seed Records) did not populate `state.resources`.
+  - When clicking "Generate Mock API", `/api/create` was called with an empty `resources: []` array, returning HTTP `400 "resources must be a non-empty array"`.
+  - `wizSubmit()` prematurely executed `setTimeout(() => wizShow(5), 400)`, forcing the user onto Step 5 even on failure.
+  - Step 5 cards remained frozen with "Waiting for generate…", "EXPIRED", and empty script tag.
+  - `populateMethodCards()` was hooked to a non-existent `window.fillOutputPanel` instead of `window.renderOutput`.
+- **Root Cause:**
+  - `wizGoToStep4()` in [`static/app.html`](file:///c:/Users/SAHIL/Desktop/MOCKDOC/static/app.html) did not invoke resource serialization or `buildStep2()`.
+  - Class name mismatches (`.endpoint-method` vs `.method-badge`) prevented dynamic extraction of endpoint URLs and cURL snippets.
+- **Fix Applied:**
+  1. Updated `wizGoToStep4()` to extract inputs, validate JSON schema, set `state.resources`, synchronize `state.auth`, and call `buildStep2()`.
+  2. Pre-filled seed record textareas with valid sample records in `buildStep2()`, with fallback support in `getRecordsForIndex()`.
+  3. Added defense-in-depth resource reconstruction in `submitCreate()` in [`static/script.js`](file:///c:/Users/SAHIL/Desktop/MOCKDOC/static/script.js).
+  4. Changed `wizSubmit()` to wait for API resolution; only advance to Step 5 on HTTP 200 via `renderOutput()`.
+  5. Hooked `populateMethodCards()` into `renderOutput()` and supported both `.endpoint-method` and `.method-badge` DOM selectors.
+
+---
+
+## Complete Issues Summary Matrix
+
+| Issue Area | Problem | Severity | Effort |
+| :--- | :--- | :--- | :--- |
 | **Core Bug** | Missing `"number"` validation in `db.py` | 🔴 Critical (All numeric fields rejected) | Easy |
 | **LLM API** | Invalid default model `openai/gpt-oss-20b` | 🔴 Critical (AI features fail by default) | Easy |
 | **Integration** | Auth header clash (`check_ownership` vs `check_auth`) | 🔴 Critical (Protected writes impossible) | Medium |
 | **Integration** | Interceptor PUT & DELETE not modifying state | 🔴 Critical (Simulated edits/deletions lost) | Medium |
+| **Integration** | Wizard state desync (`resources: []` 400 error on `/api/create`) | 🔴 Critical (Stuck on generate screen) | Easy |
 | **Deployment** | `render.yaml` missing `DB_PATH` | 🟠 High (Data wiped on every restart) | Easy |
 | **Package** | `requirements.txt` encoded in UTF-16LE | 🟠 High (Deployment failures on Linux) | Easy |
 | **Routing** | Single segment `<resource_name>` blocking `/api/jobs` | 🟠 High (Direct API 404s for common routes) | Medium |
@@ -502,3 +530,4 @@ This document provides an exhaustive breakdown of bugs, architectural bottleneck
 ---
 
 *Generated for the MockDock project repository.*
+
